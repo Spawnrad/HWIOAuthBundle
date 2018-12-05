@@ -286,6 +286,7 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
         if (JSON_ERROR_NONE !== json_last_error()) {
             parse_str($content, $response);
         }
+        dump($response);
 
         return $response;
     }
