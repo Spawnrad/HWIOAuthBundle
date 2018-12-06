@@ -93,6 +93,7 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         ), $extraParameters);
 
         $response = $this->doGetTokenRequest($this->options['access_token_url'], $parameters);
+        dump($response);
         $response = $this->getResponseContent($response);
 
         $this->validateResponseContent($response);

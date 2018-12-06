@@ -287,7 +287,7 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
             parse_str($content, $response);
         }
         
-        dump($response);
+        dd($response);
 
         return $response;
     }
