@@ -263,7 +263,6 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
                 $content
             );
         } catch (Exception $e) {
-            dd($e);
             throw new HttpTransportException('Error while sending HTTP request', $this->getName(), $e->getCode(), $e);
         }
     }
@@ -288,8 +287,6 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
             parse_str($content, $response);
         }
         
-        dd($response);
-
         return $response;
     }
 
