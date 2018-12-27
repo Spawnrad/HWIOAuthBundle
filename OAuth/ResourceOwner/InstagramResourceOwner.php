@@ -11,45 +11,88 @@
 
 namespace HWI\Bundle\OAuthBundle\OAuth\ResourceOwner;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * InstagramResourceOwner.
+ * FacebookResourceOwner.
  *
- * @author Jean-Christophe Cuvelier <jcc@atomseeds.com>
+ * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  */
-class InstagramResourceOwner extends GenericOAuth2ResourceOwner
+class FacebookResourceOwner extends GenericOAuth2ResourceOwner
 {
     /**
      * {@inheritdoc}
      */
     protected $paths = array(
-        'identifier'      => 'data.id',
-        'name'        => 'data.username',
-        'profilepicture'  => 'data.profile_picture',
-        'followers' => 'data.counts.followed_by',
+        'identifier' => 'id',
+        'name' => 'accounts.data.0.name',
+        'profilepicture' => 'accounts.data.0.picture.data.url',
+        'followers' => 'accounts.data.0.fan_count',
+        'page_id' => 'accounts.data.0.id',
+        'page_access_token' => 'accounts.data.0.access_token',
+        'link' => 'accounts.data.0.link',
+        'instagram' => 'accounts.data.0.connected_instagram_account.id',
+        'accounts' => 'accounts.data'
     );
 
     /**
      * {@inheritdoc}
      */
-    protected function doGetUserInformationRequest($url, array $parameters = array())
+    public function getUserInformation(array $accessToken, array $extraParameters = array())
     {
-        return $this->httpRequest($this->normalizeUrl($url, $parameters), null, array(), 'GET');
+        if ($this->options['appsecret_proof']) {
+            $extraParameters['appsecret_proof'] = hash_hmac('sha256', $accessToken['access_token'], $this->options['client_secret']);
+        }
+
+        return parent::getUserInformation($accessToken, $extraParameters);
     }
 
-        /**
-     * {@inheritDoc}
+    /**
+     * {@inheritdoc}
+     */
+    public function getAuthorizationUrl($redirectUri, array $extraParameters = array())
+    {
+        $extraOptions = array();
+        if (isset($this->options['display'])) {
+            $extraOptions['display'] = $this->options['display'];
+        }
+
+        if (isset($this->options['auth_type'])) {
+            $extraOptions['auth_type'] = $this->options['auth_type'];
+        }
+
+        return parent::getAuthorizationUrl($redirectUri, array_merge($extraOptions, $extraParameters));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getAccessToken(Request $request, $redirectUri, array $extraParameters = array())
+    {
+        $parameters = array();
+        if ($request->query->has('fb_source')) {
+            $parameters['fb_source'] = $request->query->get('fb_source');
+        }
+
+        if ($request->query->has('fb_appcenter')) {
+            $parameters['fb_appcenter'] = $request->query->get('fb_appcenter');
+        }
+
+        return parent::getAccessToken($request, $this->normalizeUrl($redirectUri, $parameters), $extraParameters);
+    }
+
+    /**
+     * {@inheritdoc}
      */
     public function revokeToken($token)
     {
         $parameters = array(
             'client_id' => $this->options['client_id'],
             'client_secret' => $this->options['client_secret'],
-            'token' => $token,
         );
 
-        $response = $this->httpRequest($this->options['revoke_token_url'], http_build_query($parameters, '', '&'), array(), 'POST');
+        $response = $this->httpRequest($this->normalizeUrl($this->options['revoke_token_url'], array('access_token' => $token)), $parameters, array(), 'DELETE');
 
         return 200 === $response->getStatusCode();
     }
@@ -62,15 +105,20 @@ class InstagramResourceOwner extends GenericOAuth2ResourceOwner
         parent::configureOptions($resolver);
 
         $resolver->setDefaults(array(
-            'authorization_url'         => 'https://api.instagram.com/oauth/authorize',
-            'access_token_url'          => 'https://api.instagram.com/oauth/access_token',
-            'revoke_token_url'          => 'https://www.instagram.com/oauth/revoke_access/',
-            'infos_url'                 => 'https://api.instagram.com/v1/users/self',
-
-            // Instagram supports authentication with only one defined URL
-            'auth_with_one_url' => false,
-
-            'use_bearer_authorization' => false,
+            'authorization_url' => 'https://www.facebook.com/v3.2/dialog/oauth',
+            'access_token_url' => 'https://graph.facebook.com/v3.2/oauth/access_token',
+            'revoke_token_url' => 'https://graph.facebook.com/v3.2/me/permissions', 
+            'infos_url' => 'https://graph.facebook.com/v3.2/me',
+            'use_commas_in_scope' => true,
+            'display' => null,
+            'auth_type' => null,
+            'appsecret_proof' => false,
         ));
+
+        $resolver
+            ->setAllowedValues('display', array('page', 'popup', 'touch', null)) // @link https://developers.facebook.com/docs/reference/dialogs/#display
+            ->setAllowedValues('auth_type', array('rerequest', null)) // @link https://developers.facebook.com/docs/reference/javascript/FB.login/
+            ->setAllowedTypes('appsecret_proof', 'bool') // @link https://developers.facebook.com/docs/graph-api/securing-requests
+        ;
     }
 }
