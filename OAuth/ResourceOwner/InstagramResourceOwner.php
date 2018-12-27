@@ -19,7 +19,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  *
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  */
-class FacebookResourceOwner extends GenericOAuth2ResourceOwner
+class InstagramResourceOwner extends GenericOAuth2ResourceOwner
 {
     /**
      * {@inheritdoc}
