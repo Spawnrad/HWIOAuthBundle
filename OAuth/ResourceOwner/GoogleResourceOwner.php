@@ -25,8 +25,8 @@ class GoogleResourceOwner extends GenericOAuth2ResourceOwner
      * {@inheritdoc}
      */
     protected $paths = array(
-        'identifier' => 'items.0.id',
-        'accounts' => 'items.0.webProperties',
+        'identifier' => 'username',
+        'accounts' => 'items',
     );
 
     /**
