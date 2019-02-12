@@ -86,17 +86,17 @@ class PathUserResponse extends AbstractUserResponse
     /**
      * {@inheritdoc}
      */
-    public function getProfilePicture()
+    public function getProfilePicture($page_id = null)
     {
-        return $this->getValueForPath('profilepicture');
+        return $this->getValueForPath('profilepicture', null, null, $page_id);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getFollowers($limit)
+    public function getFollowers($limit, $page_id = null)
     {
-        return $this->getValueForPath('followers', $limit);
+        return $this->getValueForPath('followers', $limit, null, $page_id);
     }
 
     /**
@@ -215,7 +215,6 @@ class PathUserResponse extends AbstractUserResponse
                 }
             }
         }
-
 
         if ($page_level) {
             $steps = preg_replace("|(\d+)|", $page_level, $steps);
