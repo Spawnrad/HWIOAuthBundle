@@ -32,7 +32,7 @@ class InstagramResourceOwner extends GenericOAuth2ResourceOwner
         'page_id' => 'accounts.data.0.id',
         'page_access_token' => 'accounts.data.0.access_token',
         'link' => 'accounts.data.0.link',
-        'instagram' => 'accounts.data.0.connected_instagram_account.id',
+        'instagram' => 'accounts.data.0.instagram_business_account.id',
         'accounts' => 'accounts.data'
     );
 
