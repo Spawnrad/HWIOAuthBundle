@@ -1,5 +1,6 @@
 Changelog
 =========
+
 ## 0.6.3 (2018-07-31)
 * Fixed: Vkontakte profile picture & nickname path,
 * Fixed: `Content-Length` header must be a string,
