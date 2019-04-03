@@ -212,6 +212,10 @@ class PathUserResponse extends AbstractUserResponse
 
                 if ($accounts) {
                     $page_level = array_search($page_id, array_column($accounts, 'id'));
+
+                    if($page_level === false){
+                        return null;
+                    }
                 }
             }
         }
