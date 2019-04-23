@@ -33,6 +33,8 @@ class PathUserResponse extends AbstractUserResponse
         'profilepicture' => null,
         'followers' => null,
         'accounts' => null,
+        'statusCode' => null,
+        'error' => null,
     );
 
     /**
@@ -154,6 +156,16 @@ class PathUserResponse extends AbstractUserResponse
     {
         return $this->getValueForPath('instagram', null, null, $page_id);
     }
+
+    public function getStatusCode()
+    {
+        return $this->getValueForPath('statusCode');
+    }    
+
+    public function getError()
+    {
+        return $this->getValueForPath('error');
+    }      
 
     /**
      * Get the configured paths.

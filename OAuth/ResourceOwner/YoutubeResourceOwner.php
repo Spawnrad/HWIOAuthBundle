@@ -29,6 +29,8 @@ class YoutubeResourceOwner extends GenericOAuth2ResourceOwner
         'profilepicture' => 'items.0.snippet.thumbnails.high.url',
         'followers' => 'items.0.statistics.subscriberCount',
         'uploadId' => 'items.0.contentDetails.relatedPlaylists.uploads',
+        'statusCode' => 'error.code',
+        'error' => 'error.message'
     );
 
     /**

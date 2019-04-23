@@ -32,7 +32,9 @@ class FacebookResourceOwner extends GenericOAuth2ResourceOwner
         'page_id' => 'accounts.data.0.id',
         'page_access_token' => 'accounts.data.0.access_token',
         'link' => 'accounts.data.0.link',
-        'accounts' => 'accounts.data'
+        'accounts' => 'accounts.data',
+        'statusCode' => 'error.code',
+        'error' => 'error.message'
     );
 
     /**

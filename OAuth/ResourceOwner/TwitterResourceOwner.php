@@ -28,6 +28,8 @@ class TwitterResourceOwner extends GenericOAuth1ResourceOwner
         'name' => 'screen_name',
         'profilepicture' => 'profile_image_url_https',
         'followers' => 'followers_count',
+        'statusCode' => 'errors.0.code',
+        'error' => 'error.0.message'
     );
 
     /**
