@@ -194,7 +194,7 @@ class PathUserResponse extends AbstractUserResponse
      */
     public function getPath($name)
     {
-        return array_key_exists($name, $this->paths) ? $this->paths[$name] : null;
+        return \array_key_exists($name, $this->paths) ? $this->paths[$name] : null;
     }
 
     /**
@@ -282,7 +282,7 @@ class PathUserResponse extends AbstractUserResponse
     {
         $value = $data;
         foreach (explode('.', $steps) as $step) {
-            if (!array_key_exists($step, $value)) {
+            if (!\array_key_exists($step, $value)) {
                 return null;
             }
 

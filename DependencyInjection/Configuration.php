@@ -3,7 +3,7 @@
 /*
  * This file is part of the HWIOAuthBundle package.
  *
- * (c) Hardware.Info <opensource@hardware.info>
+ * (c) Hardware Info <opensource@hardware.info>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -20,7 +20,7 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
  *
  * @author Alexander <iam.asm89@gmail.com>
  */
-class Configuration implements ConfigurationInterface
+final class Configuration implements ConfigurationInterface
 {
     /**
      * Array of supported resource owners, indentation is intentional to easily notice
@@ -28,8 +28,8 @@ class Configuration implements ConfigurationInterface
      *
      * @var array
      */
-    private static $resourceOwners = array(
-        'oauth2' => array(
+    private static $resourceOwners = [
+        'oauth2' => [
             'amazon',
             'asana',
             'auth0',
@@ -81,8 +81,8 @@ class Configuration implements ConfigurationInterface
             'yandex',
             '37signals',
             'itembase',
-        ),
-        'oauth1' => array(
+        ],
+        'oauth1' => [
             'bitbucket',
             'discogs',
             'dropbox',
@@ -93,8 +93,8 @@ class Configuration implements ConfigurationInterface
             'twitter',
             'xing',
             'yahoo',
-        ),
-    );
+        ],
+    ];
 
     /**
      * Return the type (OAuth1 or OAuth2) of given resource owner.
@@ -110,7 +110,7 @@ class Configuration implements ConfigurationInterface
             return $resourceOwner;
         }
 
-        if (in_array($resourceOwner, static::$resourceOwners['oauth1'], true)) {
+        if (\in_array($resourceOwner, static::$resourceOwners['oauth1'], true)) {
             return 'oauth1';
         }
 
@@ -131,11 +131,11 @@ class Configuration implements ConfigurationInterface
             return true;
         }
 
-        if (in_array($resourceOwner, static::$resourceOwners['oauth1'], true)) {
+        if (\in_array($resourceOwner, static::$resourceOwners['oauth1'], true)) {
             return true;
         }
 
-        return in_array($resourceOwner, static::$resourceOwners['oauth2'], true);
+        return \in_array($resourceOwner, static::$resourceOwners['oauth2'], true);
     }
 
     /**
@@ -147,7 +147,13 @@ class Configuration implements ConfigurationInterface
     {
         $builder = new TreeBuilder('hwi_oauth');
 
-        $rootNode = $builder->getRootNode();
+        if (method_exists($builder, 'getRootNode')) {
+            $rootNode = $builder->getRootNode();
+        } else {
+            // BC layer for symfony/config 4.1 and older
+            $rootNode = $builder->root('hwi_oauth');
+        }
+
         $rootNode
             ->fixXmlConfig('firewall_name')
             ->children()
@@ -277,7 +283,7 @@ class Configuration implements ConfigurationInterface
                             ->scalarNode('type')
                                 ->validate()
                                     ->ifTrue(function ($type) {
-                                        return !Configuration::isResourceOwnerSupported($type);
+                                        return !self::isResourceOwnerSupported($type);
                                     })
                                     ->thenInvalid('Unknown resource owner type "%s".')
                                 ->end()
@@ -297,11 +303,11 @@ class Configuration implements ConfigurationInterface
                                                 return true;
                                             }
 
-                                            if (is_array($v)) {
-                                                return 0 === count($v);
+                                            if (\is_array($v)) {
+                                                return 0 === \count($v);
                                             }
 
-                                            if (is_string($v)) {
+                                            if (\is_string($v)) {
                                                 return empty($v);
                                             }
 
@@ -324,7 +330,7 @@ class Configuration implements ConfigurationInterface
                                 }
 
                                 // for each type at least these have to be set
-                                foreach (array('type', 'client_id', 'client_secret') as $child) {
+                                foreach (['type', 'client_id', 'client_secret'] as $child) {
                                     if (!isset($c[$child])) {
                                         return true;
                                     }
@@ -346,7 +352,7 @@ class Configuration implements ConfigurationInterface
                                     return false;
                                 }
 
-                                $children = array('authorization_url', 'access_token_url', 'request_token_url', 'infos_url');
+                                $children = ['authorization_url', 'access_token_url', 'request_token_url', 'infos_url'];
                                 foreach ($children as $child) {
                                     // This option exists only for OAuth1.0a
                                     if ('request_token_url' === $child && 'oauth2' === $c['type']) {
@@ -375,11 +381,11 @@ class Configuration implements ConfigurationInterface
                                 }
 
                                 // one of this two options must be set
-                                if (0 === count($c['paths'])) {
+                                if (0 === \count($c['paths'])) {
                                     return !isset($c['user_response_class']);
                                 }
 
-                                foreach (array('identifier', 'nickname', 'realname') as $child) {
+                                foreach (['identifier', 'nickname', 'realname'] as $child) {
                                     if (!isset($c['paths'][$child])) {
                                         return true;
                                     }
@@ -393,7 +399,7 @@ class Configuration implements ConfigurationInterface
                             ->ifTrue(function ($c) {
                                 if (isset($c['service'])) {
                                     // ignore paths & options if none were set
-                                    return 0 !== count($c['paths']) || 0 !== count($c['options']) || 3 < count($c);
+                                    return 0 !== \count($c['paths']) || 0 !== \count($c['options']) || 3 < \count($c);
                                 }
 
                                 return false;

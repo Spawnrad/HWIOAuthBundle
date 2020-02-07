@@ -3,7 +3,7 @@
 /*
  * This file is part of the HWIOAuthBundle package.
  *
- * (c) Hardware.Info <opensource@hardware.info>
+ * (c) Hardware Info <opensource@hardware.info>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -42,52 +42,51 @@ interface UserResponseInterface extends ResponseInterface
     /**
      * Get the first name of user.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getFirstName();
 
     /**
      * Get the last name of user.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getLastName();
 
     /**
      * Get the real name of user.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getRealName();
 
     /**
      * Get the email address.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getEmail();
 
     /**
      * Get the url to the profile picture.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getProfilePicture();
 
-        /**
+    /**
      * Get Accounts
      *
-     * @return null|array
+     * @return array|null
      */
     public function getAccounts();
 
     /**
      * Get Followers count
      *
-     * @return null|string
+     * @return string|null
      */
     public function getFollowers($limit);
-
     /**
      * Get the access token used for the request.
      *
@@ -98,21 +97,21 @@ interface UserResponseInterface extends ResponseInterface
     /**
      * Get the access token used for the request.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getRefreshToken();
 
     /**
      * Get oauth token secret used for the request.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getTokenSecret();
 
     /**
      * Get the info when token will expire.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getExpiresIn();
 
