@@ -145,9 +145,9 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder()
     {
-        $builder = new TreeBuilder();
+        $builder = new TreeBuilder('hwi_oauth');
 
-        $rootNode = $builder->root('hwi_oauth');
+        $rootNode = $builder->getRootNode();
         $rootNode
             ->fixXmlConfig('firewall_name')
             ->children()
