@@ -238,12 +238,6 @@ final class ConnectController extends AbstractController
         ]);
     }
 
-    protected function getParameter(string $name)
-    {
-        // Symfony 3.4 compat
-        return $this->container->getParameter($name);
-    }
-
     /**
      * Get a resource owner by name.
      *
