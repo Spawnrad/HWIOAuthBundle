@@ -21,7 +21,9 @@ use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use HWI\Bundle\OAuthBundle\Security\Core\Exception\AccountNotLinkedException;
 use HWI\Bundle\OAuthBundle\Security\Http\ResourceOwnerMapLocator;
 use HWI\Bundle\OAuthBundle\Security\OAuthUtils;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\FrameworkBundle\Controller\ControllerTrait;
+use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\EventDispatcher\LegacyEventDispatcherProxy;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\FormInterface;
@@ -38,8 +40,11 @@ use Symfony\Component\Security\Http\SecurityEvents;
 /**
  * @author Alexander <iam.asm89@gmail.com>
  */
-final class ConnectController extends AbstractController
+final class ConnectController implements ContainerAwareInterface
 {
+    use ContainerAwareTrait;
+    use ControllerTrait;
+
     /**
      * @var OAuthUtils
      */
@@ -50,6 +55,10 @@ final class ConnectController extends AbstractController
      */
     private $resourceOwnerMapLocator;
 
+    /**
+     * @param OAuthUtils              $oauthUtils
+     * @param ResourceOwnerMapLocator $resourceOwnerMapLocator
+     */
     public function __construct(OAuthUtils $oauthUtils, ResourceOwnerMapLocator $resourceOwnerMapLocator)
     {
         $this->oauthUtils = $oauthUtils;
@@ -71,12 +80,12 @@ final class ConnectController extends AbstractController
      */
     public function registrationAction(Request $request, $key)
     {
-        $connect = $this->getParameter('hwi_oauth.connect');
+        $connect = $this->container->getParameter('hwi_oauth.connect');
         if (!$connect) {
             throw new NotFoundHttpException();
         }
 
-        $hasUser = $this->isGranted($this->getParameter('hwi_oauth.grant_rule'));
+        $hasUser = $this->isGranted($this->container->getParameter('hwi_oauth.grant_rule'));
         if ($hasUser) {
             throw new AccessDeniedException('Cannot connect already registered account.');
         }
@@ -101,14 +110,14 @@ final class ConnectController extends AbstractController
         ;
 
         /* @var $form FormInterface */
-        $form = $this->get('hwi_oauth.registration.form.factory')->createForm();
+        $form = $this->container->get('hwi_oauth.registration.form.factory')->createForm();
 
-        $formHandler = $this->get('hwi_oauth.registration.form.handler');
+        $formHandler = $this->container->get('hwi_oauth.registration.form.handler');
         if ($formHandler->process($request, $form, $userInformation)) {
             $event = new FormEvent($form, $request);
             $this->dispatch($event, HWIOAuthEvents::REGISTRATION_SUCCESS);
 
-            $this->get('hwi_oauth.account.connector')->connect($form->getData(), $userInformation);
+            $this->container->get('hwi_oauth.account.connector')->connect($form->getData(), $userInformation);
 
             // Authenticate the user
             $this->authenticateUser($request, $form->getData(), $error->getResourceOwnerName(), $error->getAccessToken());
@@ -163,12 +172,12 @@ final class ConnectController extends AbstractController
      */
     public function connectServiceAction(Request $request, $service)
     {
-        $connect = $this->getParameter('hwi_oauth.connect');
+        $connect = $this->container->getParameter('hwi_oauth.connect');
         if (!$connect) {
             throw new NotFoundHttpException();
         }
 
-        $hasUser = $this->isGranted($this->getParameter('hwi_oauth.grant_rule'));
+        $hasUser = $this->isGranted($this->container->getParameter('hwi_oauth.grant_rule'));
         if (!$hasUser) {
             throw new AccessDeniedException('Cannot connect an account.');
         }
@@ -200,15 +209,15 @@ final class ConnectController extends AbstractController
 
         // Redirect to the login path if the token is empty (Eg. User cancelled auth)
         if (null === $accessToken) {
-            if ($this->getParameter('hwi_oauth.failed_use_referer') && $targetPath = $this->getTargetPath($session)) {
+            if ($this->container->getParameter('hwi_oauth.failed_use_referer') && $targetPath = $this->getTargetPath($session)) {
                 return $this->redirect($targetPath);
             }
 
-            return $this->redirectToRoute($this->getParameter('hwi_oauth.failed_auth_path'));
+            return $this->redirectToRoute($this->container->getParameter('hwi_oauth.failed_auth_path'));
         }
 
         // Show confirmation page?
-        if (!$this->getParameter('hwi_oauth.connect.confirmation')) {
+        if (!$this->container->getParameter('hwi_oauth.connect.confirmation')) {
             return $this->getConfirmationResponse($request, $accessToken, $service);
         }
 
@@ -238,12 +247,6 @@ final class ConnectController extends AbstractController
         ]);
     }
 
-    protected function getParameter(string $name)
-    {
-        // Symfony 3.4 compat
-        return $this->container->getParameter($name);
-    }
-
     /**
      * Get a resource owner by name.
      *
@@ -255,7 +258,7 @@ final class ConnectController extends AbstractController
      */
     private function getResourceOwnerByName($name)
     {
-        foreach ($this->getParameter('hwi_oauth.firewall_names') as $firewall) {
+        foreach ($this->container->getParameter('hwi_oauth.firewall_names') as $firewall) {
             if (!$this->resourceOwnerMapLocator->has($firewall)) {
                 continue;
             }
@@ -281,7 +284,7 @@ final class ConnectController extends AbstractController
     private function authenticateUser(Request $request, UserInterface $user, $resourceOwnerName, $accessToken, $fakeLogin = true)
     {
         try {
-            $userChecker = $this->get('hwi_oauth.user_checker');
+            $userChecker = $this->container->get('hwi_oauth.user_checker');
             $userChecker->checkPreAuth($user);
             $userChecker->checkPostAuth($user);
         } catch (AccountStatusException $e) {
@@ -316,7 +319,7 @@ final class ConnectController extends AbstractController
             return null;
         }
 
-        foreach ($this->getParameter('hwi_oauth.firewall_names') as $providerKey) {
+        foreach ($this->container->getParameter('hwi_oauth.firewall_names') as $providerKey) {
             $sessionKey = '_security.'.$providerKey.'.target_path';
             if ($session->has($sessionKey)) {
                 return $session->get($sessionKey);
@@ -338,7 +341,7 @@ final class ConnectController extends AbstractController
     private function getConfirmationResponse(Request $request, array $accessToken, $service)
     {
         /** @var $currentToken OAuthToken */
-        $currentToken = $this->get('security.token_storage')->getToken();
+        $currentToken = $this->container->get('security.token_storage')->getToken();
         /** @var $currentUser UserInterface */
         $currentUser = $currentToken->getUser();
 
@@ -350,7 +353,7 @@ final class ConnectController extends AbstractController
         $event = new GetResponseUserEvent($currentUser, $request);
         $this->dispatch($event, HWIOAuthEvents::CONNECT_CONFIRMED);
 
-        $this->get('hwi_oauth.account.connector')->connect($currentUser, $userInformation);
+        $this->container->get('hwi_oauth.account.connector')->connect($currentUser, $userInformation);
 
         if ($currentToken instanceof OAuthToken) {
             // Update user token with new details

@@ -63,6 +63,15 @@ final class LoginController
      */
     private $session;
 
+    /**
+     * @param AuthenticationUtils           $authenticationUtils
+     * @param Environment                   $twig
+     * @param RouterInterface               $router
+     * @param AuthorizationCheckerInterface $authorizationChecker
+     * @param SessionInterface              $session
+     * @param bool                          $connect
+     * @param string                        $grantRule
+     */
     public function __construct(
         AuthenticationUtils $authenticationUtils,
         Environment $twig,
@@ -76,7 +85,6 @@ final class LoginController
         $this->twig = $twig;
         $this->router = $router;
         $this->authorizationChecker = $authorizationChecker;
-        $this->session = $session;
         $this->connect = $connect;
         $this->grantRule = $grantRule;
     }

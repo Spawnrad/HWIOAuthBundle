@@ -36,9 +36,6 @@ final class ConnectControllerTest extends WebTestCase
     protected function setUp(): void
     {
         static::$class = AppKernel::class;
-        if (!class_exists(\FOS\UserBundle\Model\User::class)) {
-            $this->markTestSkipped('FOSUserBundle not installed.');
-        }
     }
 
     public static function getKernelClass(): string

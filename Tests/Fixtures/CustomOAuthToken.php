@@ -23,6 +23,6 @@ class CustomOAuthToken extends OAuthToken
             'ROLE_USER',
         ]);
 
-        $this->setUser(class_exists(\FOS\UserBundle\Model\User::class) ? new FOSUser() : new User());
+        $this->setUser(new FOSUser());
     }
 }

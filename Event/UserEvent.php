@@ -11,13 +11,14 @@
 
 namespace HWI\Bundle\OAuthBundle\Event;
 
+use Symfony\Component\EventDispatcher\Event;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @author Marek Štípek
  */
-class UserEvent extends AbstractEvent
+class UserEvent extends Event
 {
     /**
      * @var UserInterface
