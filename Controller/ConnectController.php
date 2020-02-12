@@ -22,7 +22,6 @@ use HWI\Bundle\OAuthBundle\Security\Core\Exception\AccountNotLinkedException;
 use HWI\Bundle\OAuthBundle\Security\Http\ResourceOwnerMapLocator;
 use HWI\Bundle\OAuthBundle\Security\OAuthUtils;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\EventDispatcher\LegacyEventDispatcherProxy;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -87,8 +86,8 @@ final class ConnectController extends AbstractController
             if (!$session->isStarted()) {
                 $session->start();
             }
-            $error = $session->get('_hwi_oauth.registration_error.'.$key);
-            $session->remove('_hwi_oauth.registration_error.'.$key);
+            $error = $session->get('_hwi_oauth.registration_error.' . $key);
+            $session->remove('_hwi_oauth.registration_error.' . $key);
         }
 
         if (!$error instanceof AccountNotLinkedException) {
@@ -131,7 +130,7 @@ final class ConnectController extends AbstractController
 
         if ($session) {
             // reset the error in the session
-            $session->set('_hwi_oauth.registration_error.'.$key, $error);
+            $session->set('_hwi_oauth.registration_error.' . $key, $error);
         }
 
         $event = new GetResponseUserEvent($form->getData(), $request);
@@ -192,10 +191,10 @@ final class ConnectController extends AbstractController
 
             if ($session) {
                 // save in session
-                $session->set('_hwi_oauth.connect_confirmation.'.$key, $accessToken);
+                $session->set('_hwi_oauth.connect_confirmation.' . $key, $accessToken);
             }
         } elseif ($session) {
-            $accessToken = $session->get('_hwi_oauth.connect_confirmation.'.$key);
+            $accessToken = $session->get('_hwi_oauth.connect_confirmation.' . $key);
         }
 
         // Redirect to the login path if the token is empty (Eg. User cancelled auth)
@@ -236,12 +235,6 @@ final class ConnectController extends AbstractController
             'form' => $form->createView(),
             'userInformation' => $resourceOwner->getUserInformation($accessToken),
         ]);
-    }
-
-    protected function getParameter(string $name)
-    {
-        // Symfony 3.4 compat
-        return $this->container->getParameter($name);
     }
 
     /**
@@ -317,7 +310,7 @@ final class ConnectController extends AbstractController
         }
 
         foreach ($this->getParameter('hwi_oauth.firewall_names') as $providerKey) {
-            $sessionKey = '_security.'.$providerKey.'.target_path';
+            $sessionKey = '_security.' . $providerKey . '.target_path';
             if ($session->has($sessionKey)) {
                 return $session->get($sessionKey);
             }
@@ -355,9 +348,9 @@ final class ConnectController extends AbstractController
         if ($currentToken instanceof OAuthToken) {
             // Update user token with new details
             $newToken =
-                \is_array($accessToken) &&
-                (isset($accessToken['access_token']) || isset($accessToken['oauth_token'])) ?
-                    $accessToken : $currentToken->getRawToken();
+            \is_array($accessToken) &&
+            (isset($accessToken['access_token']) || isset($accessToken['oauth_token'])) ?
+            $accessToken : $currentToken->getRawToken();
 
             $this->authenticateUser($request, $currentUser, $service, $newToken, false);
         }
@@ -381,13 +374,6 @@ final class ConnectController extends AbstractController
 
     private function dispatch($event, string $eventName = null)
     {
-        // LegacyEventDispatcherProxy exists in Symfony >= 4.3
-        if (class_exists(LegacyEventDispatcherProxy::class)) {
-            // New Symfony 4.3 EventDispatcher signature
-            $this->get('event_dispatcher')->dispatch($event, $eventName);
-        } else {
-            // Old EventDispatcher signature
-            $this->get('event_dispatcher')->dispatch($eventName, $event);
-        }
+        $this->get('event_dispatcher')->dispatch($event, $eventName);
     }
 }
