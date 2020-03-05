@@ -109,22 +109,6 @@ class AccountNotLinkedException extends UsernameNotFoundException implements OAu
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function serialize()
-    {
-        return serialize($this->__serialize());
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function unserialize($str)
-    {
-        $this->__unserialize((array) unserialize((string) $str));
-    }
-
-    /**
      * Symfony < 4.3 BC layer.
      */
     private function serializationFromParent(): array
