@@ -81,6 +81,8 @@ final class Configuration implements ConfigurationInterface
             'yandex',
             '37signals',
             'itembase',
+            'tiktok',
+            'pinterest'
         ],
         'oauth1' => [
             'bitbucket',

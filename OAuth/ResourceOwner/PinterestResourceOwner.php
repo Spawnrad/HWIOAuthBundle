@@ -18,15 +18,16 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  *
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  */
-class TiktokResourceOwner extends GenericOAuth2ResourceOwner
+class PinterestResourceOwner extends GenericOAuth2ResourceOwner
 {
     /**
      * {@inheritdoc}
      */
     protected $paths = [
         'identifier' => 'id',
-        'name' => 'data.display_name',
-        'profilepicture' => 'data.avatar_url',        
+        'name' => 'username',
+        'profilepicture' => 'profile_image',        
+        'link' => '',
         'statusCode' => 'error.code',
         'error' => 'error.message',
     ];
@@ -68,11 +69,10 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         parent::configureOptions($resolver);
 
         $resolver->setDefaults([
-            'authorization_url' => 'https://open-api.tiktok.com/platform/oauth/connect/',
-            'access_token_url' => 'https://open-api.tiktok.com/oauth/access_token/',
-            'revoke_token_url' => 'https://open-api.tiktok.com/oauth/revoke/',
-            'refresh_token_url' => 'https://open-api.tiktok.com/oauth/refresh_token',
-            'infos_url' => 'https://open-api.tiktok.com/user/info/',
+            'authorization_url' => 'https://www.pinterest.com/oauth/',
+            'access_token_url' => 'https://api.pinterest.com/v5/oauth/token',
+            'revoke_token_url' => '',
+            'infos_url' => 'https://api.pinterest.com/v5/user_account',
             'use_commas_in_scope' => true,
             'display' => null,
             'auth_type' => null,

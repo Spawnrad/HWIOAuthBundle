@@ -37,6 +37,8 @@
         <parameter key="hwi_oauth.resource_owner.youtube.class">HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\YoutubeResourceOwner</parameter>
         <parameter key="hwi_oauth.resource_owner.hubic.class">HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\HubicResourceOwner</parameter>
         <parameter key="hwi_oauth.resource_owner.instagram.class">HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\InstagramResourceOwner</parameter>
+        <parameter key="hwi_oauth.resource_owner.tiktok.class">HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\TiktokResourceOwner</parameter>
+        <parameter key="hwi_oauth.resource_owner.pinterest.class">HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\PinterestResourceOwner</parameter>
         <parameter key="hwi_oauth.resource_owner.jawbone.class">HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\JawboneResourceOwner</parameter>
         <parameter key="hwi_oauth.resource_owner.jira.class">HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\JiraResourceOwner</parameter>
         <parameter key="hwi_oauth.resource_owner.linkedin.class">HWI\Bundle\OAuthBundle\OAuth\ResourceOwner\LinkedinResourceOwner</parameter>
