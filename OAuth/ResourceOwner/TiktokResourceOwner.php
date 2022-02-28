@@ -16,6 +16,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
  *
+ * TiktokResourceOwner.
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  */
 class TiktokResourceOwner extends GenericOAuth2ResourceOwner
