@@ -49,17 +49,24 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
      */
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
-        $extraOptions = [];
-        if (isset($this->options['display'])) {
-            $extraOptions['display'] = $this->options['display'];
+        if ($this->options['csrf']) {
+            if (null === $this->state) {
+                $this->state = $this->generateNonce();
+            }
+
+            $this->storage->save($this, $this->state, 'csrf_state');
         }
 
-        if (isset($this->options['auth_type'])) {
-            $extraOptions['auth_type'] = $this->options['auth_type'];
-        }
+        $parameters = array_merge([
+            'response_type' => 'code',
+            'client_key' => $this->options['client_id'],
+            'scope' => $this->options['scope'],
+            'state' => $this->state ? urlencode($this->state) : null,
+            'redirect_uri' => $redirectUri,
+        ], $extraParameters);
 
-        return parent::getAuthorizationUrl($redirectUri, array_merge($extraOptions, $extraParameters));
-    }
+        return parent::normalizeUrl($this->options['authorization_url'], $parameters);
+    }    
 
     /**
      * {@inheritdoc}
