@@ -12,7 +12,9 @@
 namespace HWI\Bundle\OAuthBundle\OAuth\ResourceOwner;
 
 use Symfony\Component\HttpFoundation\Request;
+use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 
 /**
  *
@@ -25,9 +27,9 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
      * {@inheritdoc}
      */
     protected $paths = [
-        'identifier' => 'id',
-        'name' => 'data.display_name',
-        'profilepicture' => 'data.avatar_url',        
+        'identifier' => 'data.user.open_id',
+        'name' => 'data.user.display_name',
+        'profilepicture' => 'data.user.avatar_url',        
         'statusCode' => 'error.code',
         'error' => 'error.message',
     ];
@@ -37,11 +39,28 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
      */
     public function getUserInformation(array $accessToken, array $extraParameters = [])
     {
-        if ($this->options['appsecret_proof']) {
-            $extraParameters['appsecret_proof'] = hash_hmac('sha256', $accessToken['access_token'], $this->options['client_secret']);
+        $accessToken = $accessToken['data'];
+
+        if (isset($accessToken['access_token'])){
+            $content['access_token'] = $accessToken['access_token'];
         }
 
-        return parent::getUserInformation($accessToken, $extraParameters);
+        if (isset($accessToken['open_id'])){
+            $content['open_id'] = $accessToken['open_id'];
+        }
+
+        if ($this->options['fields']) {
+            $content['fields'] = $this->options['fields'];
+        }
+
+        $content = parent::httpRequest($this->options['infos_url'], json_encode($content), ['Content-Type' => 'application/json'], 'POST');
+
+        $response = $this->getUserResponse();
+        $response->setData((string) $content->getBody());
+        $response->setResourceOwner($this);
+        $response->setOAuthToken(new OAuthToken($accessToken));
+
+        return $response;
     }
 
     /**
@@ -81,11 +100,15 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
             'revoke_token_url' => 'https://open-api.tiktok.com/oauth/revoke/',
             'refresh_token_url' => 'https://open-api.tiktok.com/oauth/refresh_token',
             'infos_url' => 'https://open-api.tiktok.com/user/info/',
+            'use_authorization_to_get_token' => false,
             'use_commas_in_scope' => false,
             'scope' => 'user.info.basic,video.list',
             'display' => null,
             'auth_type' => null,
             'appsecret_proof' => false,
+            'client_attr_name' => 'client_key',
+            'use_bearer_authorization' => false,
+            'fields' => ["open_id", "union_id", "avatar_url", "display_name"]
         ]);
 
         $resolver

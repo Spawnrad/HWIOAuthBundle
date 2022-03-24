@@ -68,7 +68,7 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
 
         $parameters = array_merge([
             'response_type' => 'code',
-            'client_id' => $this->options['client_id'],
+            $this->options['client_attr_name'] => $this->options['client_id'],
             'scope' => $this->options['scope'],
             'state' => $this->state ? urlencode($this->state) : null,
             'redirect_uri' => $redirectUri,
@@ -126,7 +126,7 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         }
 
         $parameters = [
-            'client_id' => $this->options['client_id'],
+            $this->options['client_attr_name'] => $this->options['client_id'],
             'client_secret' => $this->options['client_secret'],
         ];
 
@@ -172,7 +172,7 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
                 $headers['Authorization'] = 'Basic '.base64_encode($this->options['client_id'].':'.$this->options['client_secret']);
             }
         } else {
-            $parameters['client_id'] = $this->options['client_id'];
+            $parameters[$this->options['client_attr_name']] = $this->options['client_id'];
             $parameters['client_secret'] = $this->options['client_secret'];
         }
 
@@ -196,16 +196,28 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
      */
     protected function validateResponseContent($response)
     {
-        if (isset($response['error_description'])) {
-            throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error_description']));
-        }
+        if (isset($response['data'])) {
+            if (isset($response['message']) and $response['message'] === 'error') {
+                if (isset($response['data']['error_code']) and $response['data']['error_code']) {
+                    throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['data']['description']));
+                }
 
-        if (isset($response['error'])) {
-            throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error']['message'] ?? $response['error']));
-        }
+                if (!isset($response['data']['access_token'])) {
+                    throw new AuthenticationException('Not a valid access token.');
+                }
+            }
+        } else {
+            if (isset($response['error_description'])) {
+                throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error_description']));
+            }
 
-        if (!isset($response['access_token'])) {
-            throw new AuthenticationException('Not a valid access token.');
+            if (isset($response['error'])) {
+                throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error']['message'] ?? $response['error']));
+            }
+
+            if (!isset($response['access_token'])) {
+                throw new AuthenticationException('Not a valid access token.');
+            }            
         }
     }
 
@@ -221,6 +233,7 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
             'use_commas_in_scope' => false,
             'use_bearer_authorization' => true,
             'use_authorization_to_get_token' => true,
+            'client_attr_name' => 'client_id'
         ]);
 
         $resolver->setDefined('revoke_token_url');
@@ -247,7 +260,9 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
      */
     protected function httpRequest($url, $content = null, array $headers = [], $method = null)
     {
-        $headers += ['Content-Type' => 'application/x-www-form-urlencoded'];
+        if (!isset($headers['Content-Type'])) {
+            $headers += ['Content-Type' => 'application/x-www-form-urlencoded'];
+        }
 
         return parent::httpRequest($url, $content, $headers, $method);
     }
