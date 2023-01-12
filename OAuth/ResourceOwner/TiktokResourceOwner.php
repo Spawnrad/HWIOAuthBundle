@@ -11,10 +11,11 @@
 
 namespace HWI\Bundle\OAuthBundle\OAuth\ResourceOwner;
 
-use Symfony\Component\HttpFoundation\Request;
-use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
+use Symfony\Component\HttpFoundation\Request as HttpRequest;
+use HWI\Bundle\OAuthBundle\Security\OAuthErrorHandler;
+
 
 /**
  *
@@ -59,6 +60,24 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         $response->setData((string) $content->getBody());
         $response->setResourceOwner($this);
         $response->setOAuthToken(new OAuthToken($accessToken));
+
+        return $response;
+    }
+
+
+    public function getAccessToken(HttpRequest $request, $redirectUri, array $extraParameters = [])
+    {
+        OAuthErrorHandler::handleOAuthError($request);
+
+        $parameters = array_merge([
+            'code' => $request->query->get('code'),
+            'grant_type' => 'authorization_code'
+        ], $extraParameters);
+
+        $response = $this->doGetTokenRequest($this->options['access_token_url'], $parameters);
+        $response = $this->getResponseContent($response);
+
+        $this->validateResponseContent($response);
 
         return $response;
     }
