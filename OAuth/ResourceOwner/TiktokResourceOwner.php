@@ -30,7 +30,9 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
     protected $paths = [
         'identifier' => 'data.user.open_id',
         'name' => 'data.user.display_name',
-        'profilepicture' => 'data.user.avatar_url',        
+        'profilepicture' => 'data.user.avatar_url',   
+        'followers' => 'data.user.follower_count',
+        'bio' => 'data.user.bio_description',
         'statusCode' => 'error.code',
         'error' => 'error.message',
     ];
@@ -42,19 +44,11 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
     {
         $accessToken = $accessToken['data'];
 
-        if (isset($accessToken['access_token'])){
-            $content['access_token'] = $accessToken['access_token'];
-        }
-
-        if (isset($accessToken['open_id'])){
-            $content['open_id'] = $accessToken['open_id'];
-        }
-
-        if ($this->options['fields']) {
-            $content['fields'] = $this->options['fields'];
-        }
-
-        $content = parent::httpRequest($this->options['infos_url'], json_encode($content), ['Content-Type' => 'application/json'], 'POST');
+        $content = $this->httpRequest(
+            $this->normalizeUrl($this->options['infos_url'], $extraParameters),
+            null,
+            ['Authorization' => 'Bearer '.$accessToken['access_token']]
+        );
 
         $response = $this->getUserResponse();
         $response->setData((string) $content->getBody());
@@ -118,7 +112,7 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
             'access_token_url' => 'https://open-api.tiktok.com/oauth/access_token/',
             'revoke_token_url' => 'https://open-api.tiktok.com/oauth/revoke/',
             'refresh_token_url' => 'https://open-api.tiktok.com/oauth/refresh_token',
-            'infos_url' => 'https://open-api.tiktok.com/user/info/',
+            'infos_url' => 'https://open.tiktokapis.com/v2/user/info/',
             'use_authorization_to_get_token' => false,
             'use_commas_in_scope' => false,
             'scope' => 'user.info.basic,video.list',

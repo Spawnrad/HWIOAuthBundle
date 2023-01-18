@@ -75,6 +75,13 @@ interface UserResponseInterface extends ResponseInterface
     public function getProfilePicture();
 
     /**
+     * Get bio.
+     *
+     * @return string|null
+     */
+    public function getBio();
+
+    /**
      * Get Accounts
      *
      * @return array|null

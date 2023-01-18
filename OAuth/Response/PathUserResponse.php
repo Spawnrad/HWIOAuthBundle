@@ -29,6 +29,7 @@ class PathUserResponse extends AbstractUserResponse
         'firstname' => null,
         'lastname' => null,
         'realname' => null,
+        'bio' => null,
         'email' => null,
         'profilepicture' => null,
         'followers' => null,
@@ -88,6 +89,14 @@ class PathUserResponse extends AbstractUserResponse
     /**
      * {@inheritdoc}
      */
+    public function getBio()
+    {
+        return $this->getValueForPath('bio');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getProfilePicture($page_id = null)
     {
         return $this->getValueForPath('profilepicture', null, null, $page_id);
@@ -96,7 +105,7 @@ class PathUserResponse extends AbstractUserResponse
     /**
      * {@inheritdoc}
      */
-    public function getFollowers($limit, $page_id = null)
+    public function getFollowers($limit = null, $page_id = null)
     {
         return $this->getValueForPath('followers', $limit, null, $page_id);
     }
