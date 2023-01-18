@@ -129,7 +129,7 @@ class PathUserResponse extends AbstractUserResponse
     /**
      * {@inheritdoc}
      */
-    public function getPageLink($page_id)
+    public function getPageLink($page_id = null)
     {
         return $this->getValueForPath('link', null, null, $page_id);
     }

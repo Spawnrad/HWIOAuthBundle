@@ -33,6 +33,7 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         'profilepicture' => 'data.user.avatar_url',   
         'followers' => 'data.user.follower_count',
         'bio' => 'data.user.bio_description',
+        'link' => 'data.user.profile_deep_link',
         'statusCode' => 'error.code',
         'error' => 'error.message',
     ];
