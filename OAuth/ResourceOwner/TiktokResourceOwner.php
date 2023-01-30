@@ -80,6 +80,24 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
+    public function refreshAccessToken($refreshToken, array $extraParameters = [])
+    {
+        $parameters = array_merge([
+            'refresh_token' => $refreshToken,
+            'grant_type' => 'refresh_token',
+        ], $extraParameters);
+
+        $response = $this->doGetTokenRequest($this->options['refresh_token_url'], $parameters);
+        $response = $this->getResponseContent($response);
+
+        $this->validateResponseContent($response);
+
+        return $response;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
         if ($this->options['csrf']) {
@@ -112,7 +130,7 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
             'authorization_url' => 'https://open-api.tiktok.com/platform/oauth/connect/',
             'access_token_url' => 'https://open-api.tiktok.com/oauth/access_token/',
             'revoke_token_url' => 'https://open-api.tiktok.com/oauth/revoke/',
-            'refresh_token_url' => 'https://open-api.tiktok.com/oauth/refresh_token',
+            'refresh_token_url' => 'https://open-api.tiktok.com/oauth/refresh_token/',
             'infos_url' => 'https://open.tiktokapis.com/v2/user/info/',
             'use_authorization_to_get_token' => false,
             'use_commas_in_scope' => false,
