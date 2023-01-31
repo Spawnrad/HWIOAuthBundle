@@ -28,7 +28,7 @@ class FacebookResourceOwner extends GenericOAuth2ResourceOwner
         'identifier' => 'id',
         'name' => 'accounts.data.0.name',
         'profilepicture' => 'accounts.data.0.picture.data.url',
-        'followers' => 'accounts.data.0.fan_count',
+        'followers' => 'accounts.data.0.followers_count',
         'page_id' => 'accounts.data.0.id',
         'page_access_token' => 'accounts.data.0.access_token',
         'link' => 'accounts.data.0.link',
@@ -106,10 +106,10 @@ class FacebookResourceOwner extends GenericOAuth2ResourceOwner
         parent::configureOptions($resolver);
 
         $resolver->setDefaults([
-            'authorization_url' => 'https://www.facebook.com/v10.0/dialog/oauth',
-            'access_token_url' => 'https://graph.facebook.com/v10.0/oauth/access_token',
-            'revoke_token_url' => 'https://graph.facebook.com/v10.0/me/permissions',
-            'infos_url' => 'https://graph.facebook.com/v10.0/me',
+            'authorization_url' => 'https://www.facebook.com/v15.0/dialog/oauth',
+            'access_token_url' => 'https://graph.facebook.com/v15.0/oauth/access_token',
+            'revoke_token_url' => 'https://graph.facebook.com/v15.0/me/permissions',
+            'infos_url' => 'https://graph.facebook.com/v15.0/me',
             'use_commas_in_scope' => true,
             'display' => null,
             'auth_type' => null,
