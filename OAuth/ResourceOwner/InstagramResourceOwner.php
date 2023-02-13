@@ -102,6 +102,24 @@ class InstagramResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
+    public function refreshAccessToken($access_token, array $extraParameters = [])
+    {
+        $parameters = array_merge([
+            'fb_exchange_token' => $access_token,
+            'grant_type' => 'fb_exchange_token',
+        ], $extraParameters);
+
+        $response = $this->doGetTokenRequest($this->options['access_token_url'], $parameters);
+        $response = $this->getResponseContent($response);
+
+        $this->validateResponseContent($response);
+
+        return $response;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);

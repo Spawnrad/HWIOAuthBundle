@@ -281,12 +281,6 @@ class PathUserResponse extends AbstractUserResponse
         return $this->getValue($steps, $data);
     }
 
-    /**
-     * @param string $steps
-     * @param array  $data
-     *
-     * @return null|string
-     */
     private function getValue($steps, array $data)
     {
         $value = $data;

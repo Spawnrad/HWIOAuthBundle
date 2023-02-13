@@ -21,13 +21,6 @@ use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 interface UserResponseInterface extends ResponseInterface
 {
     /**
-     * Get the unique user identifier.
-     *
-     * Note that this is not always common known "username" because of implementation
-     * in Symfony framework. For more details follow link below.
-     *
-     * @see https://github.com/symfony/symfony/blob/2.7/src/Symfony/Component/Security/Core/User/UserProviderInterface.php#L20-L28
-     *
      * @return string
      */
     public function getUsername();
@@ -72,7 +65,9 @@ interface UserResponseInterface extends ResponseInterface
      *
      * @return string|null
      */
-    public function getProfilePicture();
+    public function getProfilePicture($page_id = null);
+
+    public function getPageId($page_level );
 
     /**
      * Get bio.
@@ -93,7 +88,8 @@ interface UserResponseInterface extends ResponseInterface
      *
      * @return string|null
      */
-    public function getFollowers($limit);
+    public function getFollowers($limit = null, $page_id = null);
+
     /**
      * Get the access token used for the request.
      *
