@@ -46,7 +46,7 @@ abstract class AbstractUserResponse implements UserResponseInterface
     /**
      * {@inheritdoc}
      */
-    public function getProfilePicture()
+    public function getProfilePicture($page_id = null)
     {
         return null;
     }
