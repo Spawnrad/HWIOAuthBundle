@@ -18,6 +18,7 @@ use HWI\Bundle\OAuthBundle\DependencyInjection\Security\Factory\OAuthFactory;
 use Symfony\Bundle\SecurityBundle\DependencyInjection\SecurityExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 
 /**
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
@@ -43,14 +44,8 @@ class HWIOAuthBundle extends Bundle
     /**
      * {@inheritdoc}
      */
-    public function getContainerExtension()
+    public function getContainerExtension(): ?ExtensionInterface
     {
-        // return the right extension instead of "auto-registering" it. Now the
-        // alias can be hwi_oauth instead of hwi_o_auth..
-        if (null === $this->extension) {
-            return new HWIOAuthExtension();
-        }
-
-        return $this->extension;
+        return $this->extension ?: $this->extension = $this->createContainerExtension();
     }
 }
