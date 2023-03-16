@@ -123,7 +123,6 @@ class InstagramResourceOwner extends GenericOAuth2ResourceOwner
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);
-
         $resolver->setDefaults([
             'authorization_url' => 'https://facebook.com/v15.0/dialog/oauth',
             'access_token_url' => 'https://graph.facebook.com/v15.0/oauth/access_token',
