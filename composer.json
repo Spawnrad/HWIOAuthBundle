@@ -81,7 +81,6 @@
 
     "autoload-dev": {
         "psr-4": {
-            "HWI\\Bundle\\OAuthBundle\\Tests\\": "Tests/"
         }
     },
 
