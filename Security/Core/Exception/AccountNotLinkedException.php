@@ -11,29 +11,27 @@
 
 namespace HWI\Bundle\OAuthBundle\Security\Core\Exception;
 
-use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
+use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\AbstractOAuthToken;
 
-class AccountNotLinkedException extends UsernameNotFoundException implements OAuthAwareExceptionInterface
+class AccountNotLinkedException extends UserNotFoundException implements OAuthAwareExceptionInterface
 {
-    /**
-     * @var string
-     */
-    protected $resourceOwnerName;
+    private ?string $resourceOwnerName = null;
 
     /**
-     * {@inheritdoc}
-     */
+        * {@inheritdoc}
+        */
     public function __serialize(): array
     {
         return [
             $this->resourceOwnerName,
-            $this->serializationFromParent(),
+            parent::__serialize(),
         ];
     }
 
     /**
-     * {@inheritdoc}
-     */
+        * {@inheritdoc}
+        */
     public function __unserialize(array $data): void
     {
         [
@@ -41,94 +39,82 @@ class AccountNotLinkedException extends UsernameNotFoundException implements OAu
             $parentData
         ] = $data;
 
-        $this->unserializationFromParent($parentData);
+        parent::__unserialize($parentData);
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getMessageKey()
+        * {@inheritdoc}
+        */
+    public function getMessageKey(): string
     {
         return 'Account could not be linked correctly.';
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getAccessToken()
+        * {@inheritdoc}
+        */
+    public function getAccessToken(): string
     {
-        return $this->getToken()->getAccessToken();
+        /** @var AbstractOAuthToken $token */
+        $token = $this->getToken();
+
+        return $token->getAccessToken();
+    }
+
+    public function getRawToken(): array
+    {
+        /** @var AbstractOAuthToken $token */
+        $token = $this->getToken();
+
+        return $token->getRawToken();
     }
 
     /**
-     * @return array
-     */
-    public function getRawToken()
+        * {@inheritdoc}
+        */
+    public function getRefreshToken(): ?string
     {
-        return $this->getToken()->getRawToken();
+        /** @var AbstractOAuthToken $token */
+        $token = $this->getToken();
+
+        return $token->getRefreshToken();
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getRefreshToken()
+        * {@inheritdoc}
+        */
+    public function getExpiresIn(): ?int
     {
-        return $this->getToken()->getRefreshToken();
+        /** @var AbstractOAuthToken $token */
+        $token = $this->getToken();
+
+        return $token->getExpiresIn();
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getExpiresIn()
+        * {@inheritdoc}
+        */
+    public function getTokenSecret(): ?string
     {
-        return $this->getToken()->getExpiresIn();
+        /** @var AbstractOAuthToken $token */
+        $token = $this->getToken();
+
+        return $token->getTokenSecret();
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getTokenSecret()
-    {
-        return $this->getToken()->getTokenSecret();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getResourceOwnerName()
+        * {@inheritdoc}
+        */
+    public function getResourceOwnerName(): ?string
     {
         return $this->resourceOwnerName;
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function setResourceOwnerName($resourceOwnerName)
+        * {@inheritdoc}
+        */
+    public function setResourceOwnerName($resourceOwnerName): void
     {
         $this->resourceOwnerName = $resourceOwnerName;
-    }
-
-    /**
-     * Symfony < 4.3 BC layer.
-     */
-    private function serializationFromParent(): array
-    {
-        if (method_exists(UsernameNotFoundException::class, '__serialize')) {
-            return parent::__serialize();
-        }
-
-        return unserialize(parent::serialize());
-    }
-
-    /**
-     * Symfony < 4.3 BC layer.
-     */
-    private function unserializationFromParent(array $parentData): void
-    {
-        if (method_exists(UsernameNotFoundException::class, '__unserialize')) {
-            parent::__unserialize($parentData);
-        } else {
-            parent::unserialize(serialize($parentData));
-        }
     }
 }

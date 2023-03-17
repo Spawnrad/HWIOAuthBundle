@@ -22,40 +22,13 @@ use Symfony\Component\Security\Core\Authentication\Token\AbstractToken;
  */
 abstract class AbstractOAuthToken extends AbstractToken
 {
-    /**
-     * @var string
-     */
-    private $accessToken;
-
-    /**
-     * @var array
-     */
-    private $rawToken;
-
-    /**
-     * @var string
-     */
-    private $refreshToken;
-
-    /**
-     * @var int
-     */
-    private $expiresIn;
-
-    /**
-     * @var int
-     */
-    private $createdAt;
-
-    /**
-     * @var string
-     */
-    private $tokenSecret;
-
-    /**
-     * @var string
-     */
-    private $resourceOwnerName;
+    private string $accessToken;
+    private array $rawToken;
+    private ?int $expiresIn = null;
+    private ?int $createdAt = null;
+    private string $resourceOwnerName;
+    private ?string $tokenSecret = null;
+    private ?string $refreshToken = null;
 
     /**
      * @param string|array $accessToken The OAuth access token
@@ -67,7 +40,10 @@ abstract class AbstractOAuthToken extends AbstractToken
 
         $this->setRawToken($accessToken);
 
-        parent::setAuthenticated(\count($roles) > 0);
+        // required for compatibility with Symfony 5.4
+        if (method_exists($this, 'setAuthenticated')) {
+            $this->setAuthenticated(\count($roles) > 0, false);
+        }
     }
 
     public function __serialize(): array
@@ -89,14 +65,14 @@ abstract class AbstractOAuthToken extends AbstractToken
         // older data which does not include all properties.
         $data = array_merge($data, array_fill(0, 4, null));
 
-        list(
+        [
             $this->accessToken,
             $this->rawToken,
             $this->refreshToken,
             $this->expiresIn,
             $this->createdAt,
             $this->resourceOwnerName,
-            $parent) = $data;
+            $parent] = $data;
 
         if (!$this->tokenSecret && isset($this->rawToken['oauth_token_secret'])) {
             $this->tokenSecret = $this->rawToken['oauth_token_secret'];
@@ -109,8 +85,12 @@ abstract class AbstractOAuthToken extends AbstractToken
         }
     }
 
+    public function copyPersistentDataFrom(self $token): void
+    {
+    }
+
     /**
-     * {@inheritdoc}
+     * @return mixed|void
      */
     public function getCredentials()
     {
@@ -231,7 +211,7 @@ abstract class AbstractOAuthToken extends AbstractToken
     }
 
     /**
-     * @return int
+     * @return int|null
      */
     public function getExpiresAt()
     {
