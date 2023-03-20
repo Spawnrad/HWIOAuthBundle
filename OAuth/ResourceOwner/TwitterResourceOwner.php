@@ -23,7 +23,7 @@ class TwitterResourceOwner extends GenericOAuth1ResourceOwner
     /**
      * {@inheritdoc}
      */
-    protected $paths = [
+    protected array $paths = [
         'identifier' => 'id_str',
         'name' => 'screen_name',
         'profilepicture' => 'profile_image_url_https',

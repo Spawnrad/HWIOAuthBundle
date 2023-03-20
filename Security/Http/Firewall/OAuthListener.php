@@ -12,43 +12,37 @@
 namespace HWI\Bundle\OAuthBundle\Security\Http\Firewall;
 
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface;
+use HWI\Bundle\OAuthBundle\OAuth\State\State;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use HWI\Bundle\OAuthBundle\Security\Http\ResourceOwnerMapInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\Firewall\AbstractAuthenticationListener;
 
 /**
- * OAuthListener.
- *
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  * @author Alexander <iam.asm89@gmail.com>
+ *
+ * @internal
  */
 class OAuthListener extends AbstractAuthenticationListener
 {
-    /**
-     * @var ResourceOwnerMapInterface
-     */
-    private $resourceOwnerMap;
+    private ResourceOwnerMapInterface $resourceOwnerMap;
 
     /**
-     * @var array
+     * @var array<int, string>
      */
-    private $checkPaths;
+    private array $checkPaths;
 
-    /**
-     * @param ResourceOwnerMapInterface $resourceOwnerMap
-     */
-    public function setResourceOwnerMap(ResourceOwnerMapInterface $resourceOwnerMap)
+    public function setResourceOwnerMap(ResourceOwnerMapInterface $resourceOwnerMap): void
     {
         $this->resourceOwnerMap = $resourceOwnerMap;
     }
 
-    /**
-     * @param array $checkPaths
-     */
-    public function setCheckPaths(array $checkPaths)
+    public function setCheckPaths(array $checkPaths): void
     {
         $this->checkPaths = $checkPaths;
     }
@@ -56,7 +50,7 @@ class OAuthListener extends AbstractAuthenticationListener
     /**
      * {@inheritdoc}
      */
-    public function requiresAuthentication(Request $request)
+    public function requiresAuthentication(Request $request): bool
     {
         // Check if the route matches one of the check paths
         foreach ($this->checkPaths as $checkPath) {
@@ -69,12 +63,12 @@ class OAuthListener extends AbstractAuthenticationListener
     }
 
     /**
-     * {@inheritdoc}
+     * @return TokenInterface|Response|null
      */
     protected function attemptAuthentication(Request $request)
     {
         /* @var ResourceOwnerInterface $resourceOwner */
-        list($resourceOwner, $checkPath) = $this->resourceOwnerMap->getResourceOwnerByRequest($request);
+        [$resourceOwner, $checkPath] = $this->resourceOwnerMap->getResourceOwnerByRequest($request);
 
         if (!$resourceOwner) {
             throw new AuthenticationException('No resource owner match the request.');
@@ -91,7 +85,9 @@ class OAuthListener extends AbstractAuthenticationListener
             return new RedirectResponse(sprintf('%s?code=%s&authenticated=true', $this->httpUtils->generateUri($request, 'hwi_oauth_connect_service'), $request->query->get('code')));
         }
 
-        $resourceOwner->isCsrfTokenValid($request->get('state'));
+        $resourceOwner->isCsrfTokenValid(
+            $this->extractCsrfTokenFromState($request->get('state'))
+        );
 
         $accessToken = $resourceOwner->getAccessToken(
             $request,
@@ -102,5 +98,12 @@ class OAuthListener extends AbstractAuthenticationListener
         $token->setResourceOwnerName($resourceOwner->getName());
 
         return $this->authenticationManager->authenticate($token);
+    }
+
+    private function extractCsrfTokenFromState(?string $stateParameter): ?string
+    {
+        $state = new State($stateParameter);
+
+        return $state->getCsrfToken() ?: $stateParameter;
     }
 }

@@ -14,70 +14,55 @@ namespace HWI\Bundle\OAuthBundle\Security\Core\User;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * OAuthUser.
- *
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  */
-class OAuthUser implements UserInterface
+final class OAuthUser implements UserInterface
 {
-    /**
-     * @var string
-     */
-    protected $username;
+    private string $username;
 
-    /**
-     * @param string $username
-     */
-    public function __construct($username)
+    public function __construct(string $username)
     {
         $this->username = $username;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getRoles()
-    {
-        return ['ROLE_USER', 'ROLE_OAUTH_USER'];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getPassword()
-    {
-        return null;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getSalt()
-    {
-        return null;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getUsername()
+    public function getUserIdentifier(): string
     {
         return $this->username;
     }
 
     /**
-     * {@inheritdoc}
+     * @return array<int, string>
      */
-    public function eraseCredentials()
+    public function getRoles(): array
+    {
+        return ['ROLE_USER', 'ROLE_OAUTH_USER'];
+    }
+
+    public function getPassword(): ?string
+    {
+        return null;
+    }
+
+    public function getSalt(): ?string
+    {
+        return null;
+    }
+
+    public function getUsername(): string
+    {
+        return $this->getUserIdentifier();
+    }
+
+    public function eraseCredentials(): bool
     {
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function equals(UserInterface $user)
+    public function equals(UserInterface $user): bool
     {
-        return $user->getUsername() === $this->username;
+        // @phpstan-ignore-next-line Symfony <5.4 BC layer
+        $username = method_exists($user, 'getUserIdentifier') ? $user->getUserIdentifier() : $user->getUsername();
+
+        return $username === $this->username;
     }
 }

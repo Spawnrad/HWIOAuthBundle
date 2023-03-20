@@ -17,36 +17,38 @@ namespace HWI\Bundle\OAuthBundle\Security\Http;
 final class ResourceOwnerMapLocator
 {
     /**
-     * @var array
+     * @var array<string, ResourceOwnerMapInterface>
      */
-    private $resourceOwnerMaps = [];
+    private array $resourceOwnerMaps = [];
 
-    /**
-     * @param string                    $firewallId
-     * @param ResourceOwnerMapInterface $resourceOwnerMap
-     */
-    public function add(string $firewallId, ResourceOwnerMapInterface $resourceOwnerMap): void
+    public function set(string $firewallName, ResourceOwnerMapInterface $resourceOwnerMap): void
     {
-        $this->resourceOwnerMaps[$firewallId] = $resourceOwnerMap;
+        $this->resourceOwnerMaps[$firewallName] = $resourceOwnerMap;
+    }
+
+    public function has(string $firewallName): bool
+    {
+        return isset($this->resourceOwnerMaps[$firewallName]);
+    }
+
+    public function get(string $firewallName): ResourceOwnerMapInterface
+    {
+        return $this->resourceOwnerMaps[$firewallName];
     }
 
     /**
-     * @param string $firewallId
-     *
-     * @return bool
+     * @return array<string, ResourceOwnerMapInterface>
      */
-    public function has(string $firewallId): bool
+    public function getResourceOwnerMaps(): array
     {
-        return isset($this->resourceOwnerMaps[$firewallId]);
+        return $this->resourceOwnerMaps;
     }
 
     /**
-     * @param string $firewallId
-     *
-     * @return ResourceOwnerMapInterface
+     * @return string[]
      */
-    public function get(string $firewallId): ResourceOwnerMapInterface
+    public function getFirewallNames(): array
     {
-        return $this->resourceOwnerMaps[$firewallId];
+        return array_keys($this->resourceOwnerMaps);
     }
 }

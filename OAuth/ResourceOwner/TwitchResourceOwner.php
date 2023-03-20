@@ -23,7 +23,7 @@ class TwitchResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
-    protected $paths = [
+    protected array $paths = [
         'identifier' => '_id',
         'nickname' => 'display_name',
         'realname' => 'name',

@@ -34,8 +34,6 @@ final class OAuthErrorHandler
     ];
 
     /**
-     * @param Request $request
-     *
      * @throws AuthenticationException
      */
     public static function handleOAuthError(Request $request)
@@ -45,7 +43,7 @@ final class OAuthErrorHandler
         // Try to parse content if error was not in request query
         if ($request->query->has('error')) {
             $content = json_decode($request->getContent(), true);
-            if (isset($content['error']) && JSON_ERROR_NONE === json_last_error()) {
+            if (isset($content['error']) && \JSON_ERROR_NONE === json_last_error()) {
                 if (isset($content['error']['message'])) {
                     throw new AuthenticationException($content['error']['message']);
                 }

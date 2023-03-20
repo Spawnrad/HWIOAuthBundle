@@ -12,7 +12,9 @@
 namespace HWI\Bundle\OAuthBundle\Security;
 
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface;
+use HWI\Bundle\OAuthBundle\OAuth\State\State;
 use HWI\Bundle\OAuthBundle\Security\Http\ResourceOwnerMapInterface;
+use Symfony\Bundle\SecurityBundle\Security\FirewallMap;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Http\HttpUtils;
@@ -22,67 +24,46 @@ use Symfony\Component\Security\Http\HttpUtils;
  * @author Joseph Bielawski <stloyd@gmail.com>
  * @author Francisco Facioni <fran6co@gmail.com>
  */
-class OAuthUtils
+final class OAuthUtils
 {
     public const SIGNATURE_METHOD_HMAC = 'HMAC-SHA1';
     public const SIGNATURE_METHOD_RSA = 'RSA-SHA1';
     public const SIGNATURE_METHOD_PLAINTEXT = 'PLAINTEXT';
 
-    /**
-     * @var bool
-     */
-    protected $connect;
+    private bool $connect;
+    private string $grantRule;
+    private HttpUtils $httpUtils;
+    private AuthorizationCheckerInterface $authorizationChecker;
+    private FirewallMap $firewallMap;
 
     /**
-     * @var string
+     * @var array<string, ResourceOwnerMapInterface>
      */
-    protected $grantRule;
+    private array $ownerMaps = [];
 
-    /**
-     * @var HttpUtils
-     */
-    protected $httpUtils;
-
-    /**
-     * @var ResourceOwnerMapInterface[]
-     */
-    protected $ownerMaps = [];
-
-    /**
-     * @var AuthorizationCheckerInterface
-     */
-    protected $authorizationChecker;
-
-    /**
-     * @param HttpUtils                     $httpUtils
-     * @param AuthorizationCheckerInterface $authorizationChecker
-     * @param bool                          $connect
-     * @param string                        $grantRule
-     */
     public function __construct(
         HttpUtils $httpUtils,
         AuthorizationCheckerInterface $authorizationChecker,
-        $connect,
-        $grantRule
+        FirewallMap $firewallMap,
+        bool $connect,
+        string $grantRule
     ) {
         $this->httpUtils = $httpUtils;
         $this->authorizationChecker = $authorizationChecker;
+        $this->firewallMap = $firewallMap;
         $this->connect = $connect;
         $this->grantRule = $grantRule;
     }
 
-    /**
-     * @param ResourceOwnerMapInterface $ownerMap
-     */
-    public function addResourceOwnerMap(ResourceOwnerMapInterface $ownerMap)
+    public function addResourceOwnerMap($firewallName, ResourceOwnerMapInterface $ownerMap): void
     {
-        $this->ownerMaps[] = $ownerMap;
+        $this->ownerMaps[$firewallName] = $ownerMap;
     }
 
     /**
-     * @return array
+     * @return string[]
      */
-    public function getResourceOwners()
+    public function getResourceOwners(): array
     {
         $resourceOwners = [];
 
@@ -93,55 +74,51 @@ class OAuthUtils
         return array_keys($resourceOwners);
     }
 
-    /**
-     * @param Request $request
-     * @param string  $name
-     * @param string  $redirectUrl     Optional
-     * @param array   $extraParameters Optional
-     *
-     * @return string
-     */
-    public function getAuthorizationUrl(Request $request, $name, $redirectUrl = null, array $extraParameters = [])
+    public function getAuthorizationUrl(Request $request, string $name, ?string $redirectUrl = null, array $extraParameters = []): string
     {
         $resourceOwner = $this->getResourceOwner($name);
         if (null === $redirectUrl) {
             $redirectUrl = $this->getServiceAuthUrl($request, $resourceOwner);
         }
 
+        if ($request->query->has('state')) {
+            $this->addQueryParameterToState($request->query->get('state'), $resourceOwner);
+        }
+
         return $resourceOwner->getAuthorizationUrl($redirectUrl, $extraParameters);
     }
 
-    /**
-     * @param Request                $request
-     * @param ResourceOwnerInterface $resourceOwner
-     *
-     * @return string
-     */
-    public function getServiceAuthUrl(Request $request, ResourceOwnerInterface $resourceOwner)
+    public function getServiceAuthUrl(Request $request, ResourceOwnerInterface $resourceOwner): string
     {
         if ($resourceOwner->getOption('auth_with_one_url')) {
-            return $this->httpUtils->generateUri($request, $this->getResourceOwnerCheckPath($resourceOwner->getName()));
+            $firewallName = $this->getCurrentFirewallName($request);
+
+            return $this->httpUtils->generateUri($request, $this->getResourceOwnerCheckPath($resourceOwner->getName(), $firewallName));
         }
 
         $request->attributes->set('service', $resourceOwner->getName());
+        if ($request->query->has('state')) {
+            $this->addQueryParameterToState($request->query->get('state'), $resourceOwner);
+        }
 
         return $this->httpUtils->generateUri($request, 'hwi_oauth_connect_service');
     }
 
-    /**
-     * @param Request $request
-     * @param string  $name
-     *
-     * @return string
-     */
-    public function getLoginUrl(Request $request, $name)
+    public function getLoginUrl(Request $request, string $name): string
     {
         // Just to check that this resource owner exists
         $this->getResourceOwner($name);
 
         $request->attributes->set('service', $name);
 
-        return $this->httpUtils->generateUri($request, 'hwi_oauth_service_redirect');
+        $url = $this->httpUtils->generateUri($request, 'hwi_oauth_service_redirect');
+
+        if ($request->query->has('state')) {
+            $data = ['state' => $request->query->all()['state']];
+            $url .= '?'.http_build_query($data);
+        }
+
+        return $url;
     }
 
     /**
@@ -154,12 +131,16 @@ class OAuthUtils
      * @param string $tokenSecret     Optional token secret to use with signing
      * @param string $signatureMethod Optional signature method used to sign token
      *
-     * @return string
-     *
      * @throws \RuntimeException
      */
-    public static function signRequest($method, $url, $parameters, $clientSecret, $tokenSecret = '', $signatureMethod = self::SIGNATURE_METHOD_HMAC)
-    {
+    public static function signRequest(
+        string $method,
+        string $url,
+        array $parameters,
+        string $clientSecret,
+        string $tokenSecret = '',
+        string $signatureMethod = self::SIGNATURE_METHOD_HMAC
+    ): string {
         // Validate required parameters
         foreach (['oauth_consumer_key', 'oauth_timestamp', 'oauth_nonce', 'oauth_version', 'oauth_signature_method'] as $parameter) {
             if (!isset($parameters[$parameter])) {
@@ -189,7 +170,7 @@ class OAuthUtils
 
         // Remove query params from URL
         // Ref: Spec: 9.1.2
-        $url = sprintf('%s://%s%s%s', $url['scheme'], $url['host'], ($explicitPort ? ':'.$explicitPort : ''), $url['path'] ?? '');
+        $url = sprintf('%s://%s%s%s', $url['scheme'], $url['host'], $explicitPort ? ':'.$explicitPort : '', $url['path'] ?? '');
 
         // Parameters are sorted by name, using lexicographical byte value ordering.
         // Ref: Spec: 9.1.1 (1)
@@ -230,7 +211,9 @@ class OAuthUtils
                 $signature = false;
 
                 openssl_sign($baseString, $signature, $privateKey);
-                openssl_free_key($privateKey);
+                if (\PHP_VERSION_ID < 80000) {
+                    openssl_free_key($privateKey);
+                }
                 break;
 
             case self::SIGNATURE_METHOD_PLAINTEXT:
@@ -244,18 +227,12 @@ class OAuthUtils
         return base64_encode($signature);
     }
 
-    /**
-     * @param string $name
-     *
-     * @return ResourceOwnerInterface
-     *
-     * @throws \RuntimeException
-     */
-    protected function getResourceOwner($name)
+    private function getResourceOwner(string $name): ResourceOwnerInterface
     {
         foreach ($this->ownerMaps as $ownerMap) {
             $resourceOwner = $ownerMap->getResourceOwnerByName($name);
             if ($resourceOwner instanceof ResourceOwnerInterface) {
+
                 return $resourceOwner;
             }
         }
@@ -263,19 +240,46 @@ class OAuthUtils
         throw new \RuntimeException(sprintf("No resource owner with name '%s'.", $name));
     }
 
-    /**
-     * @param string $name
-     *
-     * @return string|null
-     */
-    protected function getResourceOwnerCheckPath($name)
+    private function getCurrentFirewallName(Request $request): ?string
     {
-        foreach ($this->ownerMaps as $ownerMap) {
+        $firewallConfig = $this->firewallMap->getFirewallConfig($request);
+
+        return null === $firewallConfig ? null : $firewallConfig->getName();
+    }
+
+    private function getResourceOwnerCheckPath(string $name, ?string $firewallName = null): ?string
+    {
+        $resourceOwnerMaps = $this->ownerMaps;
+
+        // if 'oauth' for firewall defined search only in corresponding resourceOwnerMao
+        if (null !== $firewallName && isset($this->ownerMaps[$firewallName])) {
+            $resourceOwnerMaps = [$this->ownerMaps[$firewallName]];
+        }
+
+        // otherwise get the latest potential checked (basically from main firewall)
+        $resourceOwnerCheckPath = null;
+        foreach ($resourceOwnerMaps as $ownerMap) {
             if ($potentialResourceOwnerCheckPath = $ownerMap->getResourceOwnerCheckPath($name)) {
-                return $potentialResourceOwnerCheckPath;
+                $resourceOwnerCheckPath = $potentialResourceOwnerCheckPath;
             }
         }
 
-        return null;
+        return $resourceOwnerCheckPath;
+    }
+
+    /**
+     * @param string|array<string, string>|null $queryParameter The query parameter to parse and add to the State
+     * @param ResourceOwnerInterface            $resourceOwner  The resource owner holding the state to be added to
+     */
+    private function addQueryParameterToState($queryParameter, ResourceOwnerInterface $resourceOwner): void
+    {
+        if (null === $queryParameter) {
+            return;
+        }
+
+        $additionalState = new State($queryParameter);
+        foreach ($additionalState->getAll() as $key => $value) {
+            $resourceOwner->addStateParameter($key, $value);
+        }
     }
 }

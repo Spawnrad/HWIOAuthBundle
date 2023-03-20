@@ -27,7 +27,7 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
-    protected $paths = [
+    protected array $paths = [
         'identifier' => 'data.user.open_id',
         'name' => 'data.user.display_name',
         'profilepicture' => 'data.user.avatar_url',   

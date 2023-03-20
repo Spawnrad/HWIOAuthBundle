@@ -11,6 +11,7 @@
 
 namespace HWI\Bundle\OAuthBundle\OAuth;
 
+use HWI\Bundle\OAuthBundle\OAuth\Exception\HttpTransportException;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use Symfony\Component\HttpFoundation\Request as HttpRequest;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
@@ -29,7 +30,7 @@ interface ResourceOwnerInterface
      * @param array $accessToken     The access token
      * @param array $extraParameters An array of parameters to add to the url
      *
-     * @throws \HWI\Bundle\OAuthBundle\OAuth\Exception\HttpTransportException
+     * @throws HttpTransportException
      *
      * @return UserResponseInterface the wrapped response interface
      */
@@ -52,7 +53,7 @@ interface ResourceOwnerInterface
      * @param string      $redirectUri     The uri to redirect the client back to
      * @param array       $extraParameters An array of parameters to add to the url
      *
-     * @throws \HWI\Bundle\OAuthBundle\OAuth\Exception\HttpTransportException
+     * @throws HttpTransportException
      *
      * @return array The access token
      */
@@ -61,7 +62,7 @@ interface ResourceOwnerInterface
     /**
      * Check whatever CSRF token from request is valid or not.
      *
-     * @param string $csrfToken
+     * @param string|null $csrfToken
      *
      * @return bool True if CSRF token is valid
      *
@@ -90,23 +91,12 @@ interface ResourceOwnerInterface
     /**
      * Checks whether the class can handle the request.
      *
-     * @param HttpRequest $request
-     *
      * @return bool
      */
     public function handles(HttpRequest $request);
 
     /**
-     * Sets a name for the resource owner.
-     *
-     * @param string $name
-     */
-    public function setName($name);
-
-    /**
      * Add extra paths to the configuration.
-     *
-     * @param array $paths
      */
     public function addPaths(array $paths);
 
@@ -115,4 +105,10 @@ interface ResourceOwnerInterface
      * @param array  $extraParameters An array of parameters to add to the url
      */
     public function refreshAccessToken($refreshToken, array $extraParameters = []);
+
+    public function getState(): StateInterface;
+
+    public function storeState(StateInterface $state = null);
+
+    public function addStateParameter(string $key, string $value): void;
 }

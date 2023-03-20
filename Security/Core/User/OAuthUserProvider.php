@@ -17,44 +17,45 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 
 /**
- * OAuthUserProvider.
- *
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  */
-class OAuthUserProvider implements UserProviderInterface, OAuthAwareUserProviderInterface
+final class OAuthUserProvider implements UserProviderInterface, OAuthAwareUserProviderInterface
 {
+    public function loadUserByIdentifier(string $identifier): UserInterface
+    {
+        return new OAuthUser($identifier);
+    }
+
     /**
-     * {@inheritdoc}
+     * Symfony <5.4 BC layer.
+     *
+     * @param string $username
+     *
+     * @return UserInterface
      */
     public function loadUserByUsername($username)
     {
-        return new OAuthUser($username);
+        return $this->loadUserByIdentifier($username);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function loadUserByOAuthUserResponse(UserResponseInterface $response)
+    public function loadUserByOAuthUserResponse(UserResponseInterface $response): UserInterface
     {
-        return $this->loadUserByUsername($response->getNickname());
+        return $this->loadUserByIdentifier($response->getNickname());
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function refreshUser(UserInterface $user)
+    public function refreshUser(UserInterface $user): UserInterface
     {
         if (!$this->supportsClass(\get_class($user))) {
             throw new UnsupportedUserException(sprintf('Unsupported user class "%s"', \get_class($user)));
         }
 
-        return $this->loadUserByUsername($user->getUsername());
+        // @phpstan-ignore-next-line Symfony <5.4 BC layer
+        $username = method_exists($user, 'getUserIdentifier') ? $user->getUserIdentifier() : $user->getUsername();
+
+        return $this->loadUserByUsername($username);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function supportsClass($class)
+    public function supportsClass($class): bool
     {
         return 'HWI\\Bundle\\OAuthBundle\\Security\\Core\\User\\OAuthUser' === $class;
     }

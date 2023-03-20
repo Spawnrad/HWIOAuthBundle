@@ -23,7 +23,7 @@ class PinterestResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
-    protected $paths = [
+    protected array $paths = [
         'identifier' => 'id',
         'name' => 'username',
         'profilepicture' => 'profile_image',        

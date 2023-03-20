@@ -11,22 +11,25 @@
 
 namespace HWI\Bundle\OAuthBundle\OAuth\ResourceOwner;
 
-use Http\Client\Common\HttpMethodsClient;
-use Http\Client\Exception;
 use HWI\Bundle\OAuthBundle\OAuth\Exception\HttpTransportException;
 use HWI\Bundle\OAuthBundle\OAuth\RequestDataStorageInterface;
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface;
 use HWI\Bundle\OAuthBundle\OAuth\Response\PathUserResponse;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
-use Psr\Http\Message\ResponseInterface;
+use HWI\Bundle\OAuthBundle\OAuth\State\State;
+use HWI\Bundle\OAuthBundle\OAuth\StateInterface;
+use Symfony\Component\HttpClient\Exception\JsonException;
 use Symfony\Component\HttpFoundation\Request as HttpRequest;
+use Symfony\Component\OptionsResolver\Exception\AccessException;
+use Symfony\Component\OptionsResolver\Exception\UndefinedOptionsException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\HttpUtils;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 /**
- * AbstractResourceOwner.
- *
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  * @author Alexander <iam.asm89@gmail.com>
  * @author Francisco Facioni <fran6co@gmail.com>
@@ -34,53 +37,29 @@ use Symfony\Component\Security\Http\HttpUtils;
  */
 abstract class AbstractResourceOwner implements ResourceOwnerInterface
 {
-    /**
-     * @var array
-     */
-    protected $options = [];
+    protected array $options = [];
 
     /**
-     * @var array
+     * @var array<string, array<int, string>|string|null>
      */
-    protected $paths = [];
+    protected array $paths = [];
+
+    protected HttpClientInterface $httpClient;
+    protected HttpUtils $httpUtils;
+    protected string $name;
+    protected StateInterface $state;
+    protected RequestDataStorageInterface $storage;
+    private bool $stateLoaded = false;
 
     /**
-     * @var HttpMethodsClient
-     */
-    protected $httpClient;
-
-    /**
-     * @var HttpUtils
-     */
-    protected $httpUtils;
-
-    /**
-     * @var string
-     */
-    protected $name;
-
-    /**
-     * @var string
-     */
-    protected $state;
-
-    /**
-     * @var RequestDataStorageInterface
-     */
-    protected $storage;
-
-    /**
-     * @param HttpMethodsClient           $httpClient Httplug client
-     * @param HttpUtils                   $httpUtils  Http utils
-     * @param array                       $options    Options for the resource owner
-     * @param string                      $name       Name for the resource owner
-     * @param RequestDataStorageInterface $storage    Request token storage
+     * @param array  $options Options for the resource owner
+     * @param string $name    Name for the resource owner
      */
     public function __construct(
-        HttpMethodsClient $httpClient,
+        HttpClientInterface $httpClient,
         HttpUtils $httpUtils,
         array $options,
-        $name,
+        string $name,
         RequestDataStorageInterface $storage
     ) {
         $this->httpClient = $httpClient;
@@ -104,6 +83,8 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
         $this->configureOptions($resolver);
         $this->options = $resolver->resolve($options);
 
+        $this->state = new State($this->options['state'] ?: null);
+
         $this->configure();
     }
 
@@ -125,14 +106,6 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
     /**
      * {@inheritdoc}
      */
-    public function setName($name)
-    {
-        $this->name = $name;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getOption($name)
     {
         if (!\array_key_exists($name, $this->options)) {
@@ -148,6 +121,53 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
     public function addPaths(array $paths)
     {
         $this->paths = array_merge($this->paths, $paths);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getState(): StateInterface
+    {
+        if ($this->stateLoaded) {
+            return $this->state;
+        }
+
+        // lazy-loading for stored states
+        try {
+            $storedData = $this->storage->fetch($this, State::class, 'state');
+        } catch (\Throwable $e) {
+            $storedData = null;
+        }
+        if (null !== $storedData && false !== $storedState = unserialize($storedData)) {
+            foreach ($storedState->getAll() as $key => $value) {
+                $this->addStateParameter($key, $value);
+            }
+        }
+        $this->stateLoaded = true;
+
+        return $this->state;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function addStateParameter(string $key, string $value): void
+    {
+        if (!$this->state->has($key)) {
+            $this->state->add($key, $value);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function storeState(StateInterface $state = null): void
+    {
+        if (null === $state || 0 === \count($state->getAll())) {
+            return;
+        }
+
+        $this->storage->save($this, $state, 'state');
     }
 
     /**
@@ -216,7 +236,6 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
 
     /**
      * @param string $url
-     * @param array  $parameters
      *
      * @return string
      */
@@ -248,63 +267,41 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
             $method = null === $content || '' === $content ? 'GET' : 'POST';
         }
 
-        $headers += ['User-Agent' => 'HWIOAuthBundle (https://github.com/hwi/HWIOAuthBundle)'];
+        $options = ['headers' => $headers];
+        $options['headers'] += ['User-Agent' => 'HWIOAuthBundle (https://github.com/hwi/HWIOAuthBundle)'];
         if (\is_string($content)) {
-            if (!isset($headers['Content-Length'])) {
-                $headers += ['Content-Length' => (string) \strlen($content)];
+            if (!isset($options['headers']['Content-Length'])) {
+                $options['headers'] += ['Content-Length' => (string) \strlen($content)];
             }
-        } elseif (\is_array($content)) {
-            $content = http_build_query($content, '', '&');
         }
+        $options['body'] = $content;
 
         try {
-            return $this->httpClient->send(
+            return $this->httpClient->request(
                 $method,
                 $url,
-                $headers,
-                $content
+                $options
             );
-        } catch (Exception $e) {
+        } catch (TransportExceptionInterface $e) {
+            throw new HttpTransportException('Error while sending HTTP request', $this->getName(), $e->getCode(), $e);
+        }
+    }
+
+    protected function getResponseContent(ResponseInterface $rawResponse): array
+    {
+        try {
+            return $rawResponse->toArray(false);
+        } catch (JsonException $e) {
+            parse_str($rawResponse->getContent(false), $response);
+
+            return $response;
+        } catch (TransportExceptionInterface $e) {
             throw new HttpTransportException('Error while sending HTTP request', $this->getName(), $e->getCode(), $e);
         }
     }
 
     /**
-     * Get the 'parsed' content based on the response headers.
-     *
-     * @param ResponseInterface $rawResponse
-     *
-     * @return array
-     */
-    protected function getResponseContent(ResponseInterface $rawResponse)
-    {
-        // First check that content in response exists, due too bug: https://bugs.php.net/bug.php?id=54484
-        $content = (string) $rawResponse->getBody();
-        if (!$content) {
-            return [];
-        }
-
-        $response = json_decode($content, true);
-        if (JSON_ERROR_NONE !== json_last_error()) {
-            parse_str($content, $response);
-        }
-
-        return $response;
-    }
-
-    /**
-     * Generate a non-guessable nonce value.
-     *
-     * @return string
-     */
-    protected function generateNonce()
-    {
-        return md5(microtime(true).uniqid('', true));
-    }
-
-    /**
      * @param string $url
-     * @param array  $parameters
      *
      * @throws HttpTransportException
      *
@@ -314,7 +311,6 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
 
     /**
      * @param string $url
-     * @param array  $parameters
      *
      * @throws HttpTransportException
      *
@@ -325,10 +321,8 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
     /**
      * Configure the option resolver.
      *
-     * @param OptionsResolver $resolver
-     *
-     * @throws \Symfony\Component\OptionsResolver\Exception\AccessException
-     * @throws \Symfony\Component\OptionsResolver\Exception\UndefinedOptionsException
+     * @throws AccessException
+     * @throws UndefinedOptionsException
      */
     protected function configureOptions(OptionsResolver $resolver)
     {
@@ -342,6 +336,7 @@ abstract class AbstractResourceOwner implements ResourceOwnerInterface
 
         $resolver->setDefaults([
             'scope' => null,
+            'state' => null,
             'csrf' => false,
             'user_response_class' => PathUserResponse::class,
             'auth_with_one_url' => false,

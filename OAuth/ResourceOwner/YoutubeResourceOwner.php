@@ -23,7 +23,7 @@ class YoutubeResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
-    protected $paths = [
+    protected array $paths = [
         'identifier' => 'items.0.id',
         'name' => 'items.0.snippet.title',
         'profilepicture' => 'items.0.snippet.thumbnails.high.url',

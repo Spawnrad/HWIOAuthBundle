@@ -11,20 +11,25 @@
 
 namespace HWI\Bundle\OAuthBundle\OAuth\ResourceOwner;
 
+use HWI\Bundle\OAuthBundle\OAuth\Exception\HttpTransportException;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
+use HWI\Bundle\OAuthBundle\Security\Helper\NonceGenerator;
 use HWI\Bundle\OAuthBundle\Security\OAuthErrorHandler;
-use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\HttpClient\Exception\JsonException;
 use Symfony\Component\HttpFoundation\Request as HttpRequest;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 /**
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  * @author Alexander <iam.asm89@gmail.com>
  */
-class GenericOAuth2ResourceOwner extends AbstractResourceOwner
+abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
 {
+    public const TYPE = null; // it must be null
+
     /**
      * {@inheritdoc}
      */
@@ -45,12 +50,16 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
             );
         }
 
-        $response = $this->getUserResponse();
-        $response->setData($content instanceof ResponseInterface ? (string) $content->getBody() : $content);
-        $response->setResourceOwner($this);
-        $response->setOAuthToken(new OAuthToken($accessToken));
+        try {
+            $response = $this->getUserResponse();
+            $response->setData($content->toArray(false));
+            $response->setResourceOwner($this);
+            $response->setOAuthToken(new OAuthToken($accessToken));
 
-        return $response;
+            return $response;
+        } catch (TransportExceptionInterface|JsonException $e) {
+            throw new HttpTransportException('Error while sending HTTP request', $this->getName(), $e->getCode(), $e);
+        }
     }
 
     /**
@@ -59,18 +68,14 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
         if ($this->options['csrf']) {
-            if (null === $this->state) {
-                $this->state = $this->generateNonce();
-            }
-
-            $this->storage->save($this, $this->state, 'csrf_state');
+            $this->handleCsrfToken();
         }
 
         $parameters = array_merge([
             'response_type' => 'code',
             $this->options['client_attr_name'] => $this->options['client_id'],
             'scope' => $this->options['scope'],
-            'state' => $this->state ? urlencode($this->state) : null,
+            'state' => $this->state->encode(),
             'redirect_uri' => $redirectUri,
         ], $extraParameters);
 
@@ -153,6 +158,10 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
             return true;
         }
 
+        if (null === $csrfToken) {
+            throw new AuthenticationException('Given CSRF token is not valid.');
+        }
+
         try {
             return null !== $this->storage->fetch($this, urldecode($csrfToken), 'csrf_state');
         } catch (\InvalidArgumentException $e) {
@@ -163,10 +172,17 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
     /**
      * {@inheritdoc}
      */
+    public function shouldRefreshOnExpire()
+    {
+        return $this->options['refresh_on_expire'] ?? false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     protected function doGetTokenRequest($url, array $parameters = [])
     {
         $headers = [];
-
         if ($this->options['use_authorization_to_get_token']) {
             if ($this->options['client_secret']) {
                 $headers['Authorization'] = 'Basic '.base64_encode($this->options['client_id'].':'.$this->options['client_secret']);
@@ -176,9 +192,7 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
             $parameters['client_secret'] = $this->options['client_secret'];
         }
 
-        $query = http_build_query($parameters, '', '&');
-
-        return $this->httpRequest($url, $query, $headers);
+        return $this->httpRequest($url, http_build_query($parameters, '', '&'), $headers);
     }
 
     /**
@@ -196,28 +210,16 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
      */
     protected function validateResponseContent($response)
     {
-        if (isset($response['data'])) {
-            if (isset($response['message']) and $response['message'] === 'error') {
-                if (isset($response['data']['error_code']) and $response['data']['error_code']) {
-                    throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['data']['description']));
-                }
+        if (isset($response['error_description'])) {
+            throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error_description']));
+        }
 
-                if (!isset($response['data']['access_token'])) {
-                    throw new AuthenticationException('Not a valid access token.');
-                }
-            }
-        } else {
-            if (isset($response['error_description'])) {
-                throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error_description']));
-            }
+        if (isset($response['error'])) {
+            throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error']['message'] ?? $response['error']));
+        }
 
-            if (isset($response['error'])) {
-                throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error']['message'] ?? $response['error']));
-            }
-
-            if (!isset($response['access_token'])) {
-                throw new AuthenticationException('Not a valid access token.');
-            }            
+        if (!isset($response['access_token'])) {
+            throw new AuthenticationException('Not a valid access token.');
         }
     }
 
@@ -233,10 +235,12 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
             'use_commas_in_scope' => false,
             'use_bearer_authorization' => true,
             'use_authorization_to_get_token' => true,
-            'client_attr_name' => 'client_id'
+            'client_attr_name' => 'client_id',
+            'refresh_on_expire' => false,
         ]);
 
         $resolver->setDefined('revoke_token_url');
+        $resolver->setAllowedValues('refresh_on_expire', [true, false]);
 
         // Unfortunately some resource owners break the spec by using commas instead
         // of spaces to separate scopes (Disqus, Facebook, Github, Vkontante)
@@ -260,10 +264,17 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
      */
     protected function httpRequest($url, $content = null, array $headers = [], $method = null)
     {
-        if (!isset($headers['Content-Type'])) {
-            $headers += ['Content-Type' => 'application/x-www-form-urlencoded'];
-        }
+        $headers += ['Content-Type' => 'application/x-www-form-urlencoded'];
 
         return parent::httpRequest($url, $content, $headers, $method);
+    }
+
+    private function handleCsrfToken(): void
+    {
+        if (null === $this->state->getCsrfToken()) {
+            $this->state->setCsrfToken(NonceGenerator::generate());
+        }
+
+        $this->storage->save($this, $this->state->getCsrfToken(), 'csrf_state');
     }
 }

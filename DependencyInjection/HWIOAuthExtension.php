@@ -9,6 +9,19 @@
  * file that was distributed with this source code.
  */
 
+namespace Symfony\Component\DependencyInjection\Loader\Configurator;
+
+// BC symfony 4.4
+class_exists(ContainerConfigurator::class);
+
+if (!\function_exists(__NAMESPACE__.'\\service')) {
+    function service($class): ReferenceConfigurator
+    {
+        /* @phpstan-ignore-next-line function ref not found */
+        return ref($class);
+    }
+}
+
 namespace HWI\Bundle\OAuthBundle\DependencyInjection;
 
 use HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface;
@@ -16,11 +29,18 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Alias;
-use Symfony\Component\DependencyInjection\ChildDefinition;
+use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Exception\BadMethodCallException;
+use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException;
+use Symfony\Component\DependencyInjection\Exception\OutOfBoundsException;
+use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
+use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+
 
 /**
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
@@ -30,36 +50,49 @@ use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 final class HWIOAuthExtension extends Extension
 {
     /**
+     * @var \ArrayIterator<string, true>
+     */
+    private \ArrayIterator $firewallNames;
+
+    private bool $refreshTokenListenerEnabled = false;
+
+    public function __construct()
+    {
+        $this->firewallNames = new \ArrayIterator();
+    }
+
+    public function getConfiguration(array $config, ContainerBuilder $container): Configuration
+    {
+        return new Configuration();
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @throws \Exception
      * @throws \RuntimeException
      * @throws InvalidConfigurationException
-     * @throws \Symfony\Component\DependencyInjection\Exception\BadMethodCallException
-     * @throws \Symfony\Component\DependencyInjection\Exception\InvalidArgumentException
-     * @throws \Symfony\Component\DependencyInjection\Exception\OutOfBoundsException
-     * @throws \Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException
+     * @throws BadMethodCallException
+     * @throws InvalidArgumentException
+     * @throws OutOfBoundsException
+     * @throws ServiceNotFoundException
      */
-    public function load(array $configs, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
-        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config/'));
-        $loader->load('controller.xml');
-        $loader->load('http_client.xml');
-        $loader->load('oauth.xml');
-        $loader->load('templating.xml');
-        $loader->load('twig.xml');
-        $loader->load('util.xml');
+        $loader = new PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config/'));
+        $loader->load('controller.php');
+        $loader->load('oauth.php');
+        $loader->load('resource_owners.php');
+        $loader->load('twig.php');
+        $loader->load('util.php');
+
+        $container->registerForAutoconfiguration(ResourceOwnerInterface::class)
+            ->addTag('hwi_oauth.resource_owner');
 
         $processor = new Processor();
-        $config = $processor->processConfiguration(new Configuration(), $configs);
+        $configuration = $this->getConfiguration($configs, $container);
 
-        $this->createHttplugClient($container, $config);
-
-        // set current firewall
-        if (empty($config['firewall_names'])) {
-            throw new InvalidConfigurationException('The child node "firewall_names" at path "hwi_oauth" must be configured.');
-        }
-        $container->setParameter('hwi_oauth.firewall_names', $config['firewall_names']);
+        $config = $processor->processConfiguration($configuration, $configs);
 
         // set target path parameter
         $container->setParameter('hwi_oauth.target_path_parameter', $config['target_path_parameter']);
@@ -81,20 +114,22 @@ final class HWIOAuthExtension extends Extension
 
         // setup services for all configured resource owners
         $resourceOwners = [];
+        $resourceOwnerReferenceMap = [];
         foreach ($config['resource_owners'] as $name => $options) {
             $resourceOwners[$name] = $name;
-            $this->createResourceOwnerService($container, $name, $options);
+            $resourceOwnerReferenceMap[$name] = $this->createResourceOwnerService($container, $name, $options);
+
+            if (!$this->refreshTokenListenerEnabled) {
+                $this->refreshTokenListenerEnabled = $options['options']['refresh_on_expire'] ?? false;
+            }
         }
         $container->setParameter('hwi_oauth.resource_owners', $resourceOwners);
-
-        $oauthUtils = $container->getDefinition('hwi_oauth.security.oauth_utils');
-        foreach ($config['firewall_names'] as $firewallName) {
-            $oauthUtils->addMethodCall('addResourceOwnerMap', [new Reference('hwi_oauth.resource_ownermap.'.$firewallName)]);
-        }
+        $container->setAlias(
+            'hwi_oauth.resource_owners.locator',
+            (string) ServiceLocatorTagPass::register($container, $resourceOwnerReferenceMap)
+        );
 
         $this->createConnectIntegration($container, $config);
-
-        $container->setAlias('hwi_oauth.user_checker', new Alias('security.user_checker', true));
     }
 
     /**
@@ -105,116 +140,75 @@ final class HWIOAuthExtension extends Extension
      * @param array            $options   Additional options of the service
      *
      * @throws InvalidConfigurationException
-     * @throws \Symfony\Component\DependencyInjection\Exception\BadMethodCallException
-     * @throws \Symfony\Component\DependencyInjection\Exception\InvalidArgumentException
+     * @throws BadMethodCallException
+     * @throws InvalidArgumentException
      */
-    public function createResourceOwnerService(ContainerBuilder $container, $name, array $options)
+    public function createResourceOwnerService(ContainerBuilder $container, string $name, array $options): Reference
     {
         // alias services
         if (isset($options['service'])) {
-            // set the appropriate name for aliased services, compiler pass depends on it
-            $container->setAlias('hwi_oauth.resource_owner.'.$name, new Alias($options['service'], true));
-
-            return;
+            return new Reference($options['service']);
         }
-
-        $type = $options['type'];
-        unset($options['type']);
 
         // handle external resource owners with given class
         if (isset($options['class'])) {
-            if (!is_subclass_of($options['class'], ResourceOwnerInterface::class)) {
+            if (!is_subclass_of($options['class'], ResourceOwnerInterface::class, true)) {
                 throw new InvalidConfigurationException(sprintf('Class "%s" must implement interface "HWI\Bundle\OAuthBundle\OAuth\ResourceOwnerInterface".', $options['class']));
             }
 
-            $definition = new ChildDefinition('hwi_oauth.abstract_resource_owner.'.$type);
-            $definition->setClass($options['class']);
-            unset($options['class']);
+            $definition = new Definition($options['class']);
         } else {
-            $definition = new ChildDefinition('hwi_oauth.abstract_resource_owner.'.Configuration::getResourceOwnerType($type));
-            $definition->setClass("%hwi_oauth.resource_owner.$type.class%");
+            $definition = new Definition("%hwi_oauth.resource_owner.{$options['type']}.class%");
         }
+        unset($options['class'], $options['type']);
 
-        $definition->replaceArgument(2, $options);
-        $definition->replaceArgument(3, $name);
-        $definition->setPublic(true);
+        $definition->setArgument('$httpClient', new Reference('hwi_oauth.http_client'));
+        $definition->setArgument('$httpUtils', new Reference('security.http_utils'));
+        $definition->setArgument('$options', $options);
+        $definition->setArgument('$name', $name);
+        $definition->setArgument('$storage', new Reference('hwi_oauth.storage.session'));
 
         $container->setDefinition('hwi_oauth.resource_owner.'.$name, $definition);
+
+        return new Reference('hwi_oauth.resource_owner.'.$name);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getAlias()
+    public function getAlias(): string
     {
         return 'hwi_oauth';
     }
 
-    /**
-     * @param ContainerBuilder $container
-     * @param array            $config
-     */
-    protected function createHttplugClient(ContainerBuilder $container, array $config)
+    public function getFirewallNames(): \ArrayIterator
     {
-        $httpClientId = $config['http']['client'];
-        $httpMessageFactoryId = $config['http']['message_factory'];
-        $bundles = $container->getParameter('kernel.bundles');
+        return $this->firewallNames;
+    }
 
-        if ('httplug.client.default' === $httpClientId && !isset($bundles['HttplugBundle'])) {
-            throw new InvalidConfigurationException('You must setup php-http/httplug-bundle to use the default http client service.');
-        }
-        if ('httplug.message_factory.default' === $httpMessageFactoryId && !isset($bundles['HttplugBundle'])) {
-            throw new InvalidConfigurationException('You must setup php-http/httplug-bundle to use the default http message factory service.');
-        }
-
-        $container->setAlias('hwi_oauth.http.client', new Alias($config['http']['client'], true));
-        $container->setAlias('hwi_oauth.http.message_factory', new Alias($config['http']['message_factory'], true));
+    public function isRefreshTokenListenerEnabled(): bool
+    {
+        return $this->refreshTokenListenerEnabled;
     }
 
     /**
      * Check of the connect controllers etc should be enabled.
      *
-     * @param ContainerBuilder $container
-     * @param array            $config
-     *
-     * @throws \Symfony\Component\DependencyInjection\Exception\BadMethodCallException
-     * @throws \Symfony\Component\DependencyInjection\Exception\InvalidArgumentException
+     * @throws BadMethodCallException
+     * @throws InvalidArgumentException
      */
-    private function createConnectIntegration(ContainerBuilder $container, array $config)
+    private function createConnectIntegration(ContainerBuilder $container, array $config): void
     {
-        if (isset($config['connect'])) {
-            $container->setParameter('hwi_oauth.connect', true);
+        $container->setParameter('hwi_oauth.connect', isset($config['connect']));
+        $container->setParameter('hwi_oauth.connect.confirmation', $config['connect']['confirmation'] ?? false);
+        $container->setParameter('hwi_oauth.connect.registration_form', $config['connect']['registration_form'] ?? null);
 
-            if (isset($config['fosub'])) {
-                $container->setParameter('hwi_oauth.fosub_enabled', true);
+        if (isset($config['connect']['account_connector'])) {
+            $container->setAlias('hwi_oauth.account.connector', new Alias($config['connect']['account_connector'], true));
+        }
 
-                $definition = $container->setDefinition('hwi_oauth.user.provider.fosub_bridge', new ChildDefinition('hwi_oauth.user.provider.fosub_bridge.def'));
-                $definition->addArgument($config['fosub']['properties']);
-
-                // setup fosub bridge services
-                $container->setAlias('hwi_oauth.account.connector', new Alias('hwi_oauth.user.provider.fosub_bridge', true));
-
-                $definition = $container->setDefinition('hwi_oauth.registration.form.handler.fosub_bridge', new ChildDefinition('hwi_oauth.registration.form.handler.fosub_bridge.def'));
-                $definition->addArgument($config['fosub']['username_iterations']);
-
-                $container->setAlias('hwi_oauth.registration.form.handler', new Alias('hwi_oauth.registration.form.handler.fosub_bridge', true));
-                $container->setAlias('hwi_oauth.registration.form.factory', new Alias('fos_user.registration.form.factory', true));
-            } else {
-                $container->setParameter('hwi_oauth.fosub_enabled', false);
-            }
-
-            foreach ($config['connect'] as $key => $serviceId) {
-                if ('confirmation' === $key) {
-                    $container->setParameter('hwi_oauth.connect.confirmation', $config['connect']['confirmation']);
-
-                    continue;
-                }
-
-                $container->setAlias('hwi_oauth.'.str_replace('_', '.', $key), new Alias($serviceId, true));
-            }
-        } else {
-            $container->setParameter('hwi_oauth.fosub_enabled', false);
-            $container->setParameter('hwi_oauth.connect', false);
+        if (isset($config['connect']['registration_form_handler'])) {
+            $container->setAlias('hwi_oauth.registration.form.handler', new Alias($config['connect']['registration_form_handler'], true));
         }
     }
 }
