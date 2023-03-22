@@ -16,10 +16,12 @@ use HWI\Bundle\OAuthBundle\OAuth\State\State;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 use HWI\Bundle\OAuthBundle\Security\Core\Exception\OAuthAwareExceptionInterface;
 use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
+use HWI\Bundle\OAuthBundle\Security\Http\Authenticator\Passport\SelfValidatedOAuthPassport;
 use HWI\Bundle\OAuthBundle\Security\Http\ResourceOwnerMapInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\Exception\AuthenticationServiceException;
@@ -28,73 +30,40 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationFailureHandlerInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface;
 use Symfony\Component\Security\Http\Authenticator\AuthenticatorInterface;
-use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
-use Symfony\Component\Security\Http\Authenticator\Passport\PassportInterface;
-use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
+use Symfony\Component\Security\Http\Authenticator\InteractiveAuthenticatorInterface;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
+use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
 use Symfony\Component\Security\Http\HttpUtils;
 
 /**
  * @author Vadim Borodavko <vadim.borodavko@gmail.com>
  */
-final class OAuthAuthenticator implements AuthenticatorInterface
+final class OAuthAuthenticator implements AuthenticatorInterface, AuthenticationEntryPointInterface, InteractiveAuthenticatorInterface
 {
-    /**
-     * @var HttpUtils
-     */
-    private $httpUtils;
-
-    /**
-     * @var OAuthAwareUserProviderInterface
-     */
-    private $userProvider;
-
-    /**
-     * @var ResourceOwnerMapInterface
-     */
-    private $resourceOwnerMap;
+    private HttpUtils $httpUtils;
+    private OAuthAwareUserProviderInterface $userProvider;
+    private ResourceOwnerMapInterface $resourceOwnerMap;
+    private AuthenticationSuccessHandlerInterface $successHandler;
+    private AuthenticationFailureHandlerInterface $failureHandler;
+    private HttpKernelInterface $httpKernel;
 
     /**
      * @var string[]
      */
-    private $checkPaths;
+    private array $checkPaths;
 
-    /**
-     * @var AuthenticationSuccessHandlerInterface|null
-     */
-    private $successHandler;
-
-    /**
-     * @var AuthenticationFailureHandlerInterface|null
-     */
-    private $failureHandler;
-
-    /**
-     * @var mixed[]
-     */
-    private $rawToken;
-
-    /**
-     * @var string
-     */
-    private $resourceOwnerName;
-
-    /**
-     * @var string
-     */
-    private $refreshToken;
-
-    /**
-     * @var string
-     */
-    private $createdAt;
+    private array $options;
 
     public function __construct(
         HttpUtils $httpUtils,
         OAuthAwareUserProviderInterface $userProvider,
         ResourceOwnerMapInterface $resourceOwnerMap,
         array $checkPaths,
-        ?AuthenticationSuccessHandlerInterface $successHandler = null,
-        ?AuthenticationFailureHandlerInterface $failureHandler = null
+        AuthenticationSuccessHandlerInterface $successHandler,
+        AuthenticationFailureHandlerInterface $failureHandler,
+        HttpKernelInterface $kernel,
+        array $options
     ) {
         $this->failureHandler = $failureHandler;
         $this->successHandler = $successHandler;
@@ -102,6 +71,8 @@ final class OAuthAuthenticator implements AuthenticatorInterface
         $this->resourceOwnerMap = $resourceOwnerMap;
         $this->userProvider = $userProvider;
         $this->httpUtils = $httpUtils;
+        $this->httpKernel = $kernel;
+        $this->options = $options;
     }
 
     public function supports(Request $request): bool
@@ -115,11 +86,30 @@ final class OAuthAuthenticator implements AuthenticatorInterface
         return false;
     }
 
+    public function start(Request $request, AuthenticationException $authException = null): Response
+    {
+        if ($this->options['use_forward'] ?? false) {
+            $subRequest = $this->httpUtils->createRequest($request, $this->options['login_path']);
+
+            $iterator = $request->query->getIterator();
+            $subRequest->query->add(iterator_to_array($iterator));
+
+            $response = $this->httpKernel->handle($subRequest, HttpKernelInterface::SUB_REQUEST);
+            if (200 === $response->getStatusCode()) {
+                $response->headers->set('X-Status-Code', '401');
+            }
+
+            return $response;
+        }
+
+        return new RedirectResponse($this->httpUtils->generateUri($request, $this->options['login_path']));
+    }
+
     /**
      * @throws AuthenticationException
      * @throws LazyResponseException
      */
-    public function authenticate(Request $request): PassportInterface
+    public function authenticate(Request $request): Passport
     {
         [$resourceOwner, $checkPath] = $this->resourceOwnerMap->getResourceOwnerByRequest($request);
 
@@ -150,8 +140,43 @@ final class OAuthAuthenticator implements AuthenticatorInterface
         $token = new OAuthToken($accessToken);
         $token->setResourceOwnerName($resourceOwner->getName());
 
+        return new SelfValidatedOAuthPassport($this->refreshToken($token), [new RememberMeBadge()]);
+    }
+
+    /**
+     * This function can be used for refreshing an expired token
+     * or for custom "password grant" authenticator, if site owner also owns oauth instance.
+     *
+     * @template T of OAuthToken
+     *
+     * @param T $token
+     *
+     * @return T
+     */
+    public function refreshToken(OAuthToken $token): OAuthToken
+    {
+        $resourceOwner = $this->resourceOwnerMap->getResourceOwnerByName($token->getResourceOwnerName());
+        if (!$resourceOwner) {
+            throw new AuthenticationServiceException('Unknown resource owner set on token: '.$token->getResourceOwnerName());
+        }
+
         if ($token->isExpired()) {
-            $token = $this->refreshToken($token, $resourceOwner);
+            $expiredToken = $token;
+            if ($refreshToken = $expiredToken->getRefreshToken()) {
+                $tokenClass = \get_class($expiredToken);
+                $token = new $tokenClass($resourceOwner->refreshAccessToken($refreshToken));
+                $token->setResourceOwnerName($expiredToken->getResourceOwnerName());
+                if (!$token->getRefreshToken()) {
+                    $token->setRefreshToken($expiredToken->getRefreshToken());
+                }
+                $token->copyPersistentDataFrom($expiredToken);
+            } else {
+                // if you cannot refresh token, you do not need to make user_info request to oauth-resource
+                if (null !== $expiredToken->getUser()) {
+                    return $expiredToken;
+                }
+            }
+            unset($expiredToken);
         }
 
         $userResponse = $resourceOwner->getUserInformation($token->getRawToken());
@@ -169,58 +194,78 @@ final class OAuthAuthenticator implements AuthenticatorInterface
             throw new AuthenticationServiceException('loadUserByOAuthUserResponse() must return a UserInterface.');
         }
 
-        $this->rawToken = $token->getRawToken();
-        $this->resourceOwnerName = $resourceOwner->getName();
-        $this->refreshToken = $token->getRefreshToken();
-        $this->createdAt = $token->getCreatedAt();
-
-        return new SelfValidatingPassport(
-            class_exists(UserBadge::class)
-                ? new UserBadge(
-                    method_exists($user, 'getUserIdentifier') ? $user->getUserIdentifier() : $user->getUsername(),
-                    static function () use ($user) { return $user; }
-                )
-                : $user
-        );
+        return $this->recreateToken($token, $user);
     }
 
-    public function createAuthenticatedToken(PassportInterface $passport, string $firewallName): TokenInterface
+    /**
+     * @template T of OAuthToken
+     *
+     * @param T              $token
+     * @param ?UserInterface $user
+     *
+     * @return T
+     */
+    public function recreateToken(OAuthToken $token, ?UserInterface $user = null): OAuthToken
     {
-        $token = new OAuthToken($this->rawToken, $passport->getUser()->getRoles());
-        $token->setResourceOwnerName($this->resourceOwnerName);
-        $token->setUser($passport->getUser());
-        $token->setAuthenticated(true);
-        $token->setRefreshToken($this->refreshToken);
-        $token->setCreatedAt($this->createdAt);
+        $user = $user instanceof UserInterface ? $user : $token->getUser();
 
-        $this->rawToken = null;
-        $this->resourceOwnerName = null;
-        $this->refreshToken = null;
-        $this->createdAt = null;
+        $tokenClass = \get_class($token);
+        if ($user) {
+            $newToken = new $tokenClass(
+                $token->getRawToken(),
+                method_exists($user, 'getRoles') ? $user->getRoles() : []
+            );
+            $newToken->setUser($user);
+        } else {
+            $newToken = new $tokenClass($token->getRawToken());
+        }
 
-        return $token;
+        $newToken->setResourceOwnerName($token->getResourceOwnerName());
+        $newToken->setRefreshToken($token->getRefreshToken());
+        $newToken->setCreatedAt($token->getCreatedAt());
+        $newToken->setTokenSecret($token->getTokenSecret());
+        $newToken->setAttributes($token->getAttributes());
+
+        // required for compatibility with Symfony 5.4
+        if (method_exists($newToken, 'setAuthenticated')) {
+            $newToken->setAuthenticated((bool) $user, false);
+        }
+
+        $newToken->copyPersistentDataFrom($token);
+
+        return $newToken;
+    }
+
+    public function createToken(Passport $passport, string $firewallName): TokenInterface
+    {
+        return $this->createAuthenticatedToken($passport, $firewallName);
+    }
+
+    /**
+     * @param Passport|SelfValidatedOAuthPassport $passport
+     */
+    public function createAuthenticatedToken($passport, string $firewallName): TokenInterface
+    {
+        if ($passport instanceof SelfValidatedOAuthPassport) {
+            return $passport->getToken();
+        }
+
+        throw new \LogicException(sprintf('The first argument of "%s" must be instance of "%s", "%s" provided.', __METHOD__, SelfValidatedOAuthPassport::class, \get_class($passport)));
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-        return $this->successHandler ? $this->successHandler->onAuthenticationSuccess($request, $token) : null;
+        return $this->successHandler->onAuthenticationSuccess($request, $token);
     }
 
-    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
+    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
     {
-        return $this->failureHandler ? $this->failureHandler->onAuthenticationFailure($request, $exception) : null;
+        return $this->failureHandler->onAuthenticationFailure($request, $exception);
     }
 
-    private function refreshToken(OAuthToken $expiredToken, ResourceOwnerInterface $resourceOwner): OAuthToken
+    public function isInteractive(): bool
     {
-        if (!$expiredToken->getRefreshToken()) {
-            return $expiredToken;
-        }
-
-        $token = new OAuthToken($resourceOwner->refreshAccessToken($expiredToken->getRefreshToken()));
-        $token->setRefreshToken($expiredToken->getRefreshToken());
-
-        return $token;
+        return true;
     }
 
     private function extractCsrfTokenFromState(?string $stateParameter): ?string
