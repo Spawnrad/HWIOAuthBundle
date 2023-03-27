@@ -11,10 +11,11 @@
 
 namespace HWI\Bundle\OAuthBundle\OAuth\ResourceOwner;
 
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
-use Symfony\Component\HttpFoundation\Request as HttpRequest;
 use HWI\Bundle\OAuthBundle\Security\OAuthErrorHandler;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use HWI\Bundle\OAuthBundle\Security\Helper\NonceGenerator;
+use Symfony\Component\HttpFoundation\Request as HttpRequest;
+use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
 
 
 /**
@@ -52,7 +53,7 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         );
 
         $response = $this->getUserResponse();
-        $response->setData((string) $content->getBody());
+        $response->setData($content->toArray(false));
         $response->setResourceOwner($this);
         $response->setOAuthToken(new OAuthToken($accessToken));
 
@@ -101,18 +102,14 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
         if ($this->options['csrf']) {
-            if (null === $this->state) {
-                $this->state = $this->generateNonce();
-            }
-
-            $this->storage->save($this, $this->state, 'csrf_state');
+            parent::handleCsrfToken();
         }
 
         $parameters = array_merge([
             'response_type' => 'code',
             'client_key' => $this->options['client_id'],
             'scope' => $this->options['scope'],
-            'state' => $this->state ? urlencode($this->state) : null,
+            'state' => $this->state->encode(),
             'redirect_uri' => $redirectUri,
         ], $extraParameters);
 

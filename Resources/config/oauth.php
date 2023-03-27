@@ -29,8 +29,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->abstract()
         ->parent('security.authentication.listener.abstract');
 
-    $services->set('hwi_oauth.authentication.provider.oauth', OAuthProvider::class);
-
     $services->set('hwi_oauth.authentication.entry_point.oauth', OAuthEntryPoint::class)
         ->args([
             service('http_kernel'),
