@@ -12,20 +12,20 @@
 namespace HWI\Bundle\OAuthBundle\OAuth\ResourceOwner;
 
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
+use HWI\Bundle\OAuthBundle\Security\Helper\NonceGenerator;
 use HWI\Bundle\OAuthBundle\Security\OAuthErrorHandler;
 use HWI\Bundle\OAuthBundle\Security\OAuthUtils;
-use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\Request as HttpRequest;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 /**
- * GenericOAuth1ResourceOwner.
- *
  * @author Francisco Facioni <fran6co@gmail.com>
  */
-class GenericOAuth1ResourceOwner extends AbstractResourceOwner
+abstract class GenericOAuth1ResourceOwner extends AbstractResourceOwner
 {
+    public const TYPE = null; // it must be null
+
     /**
      * {@inheritdoc}
      */
@@ -34,7 +34,7 @@ class GenericOAuth1ResourceOwner extends AbstractResourceOwner
         $parameters = array_merge([
             'oauth_consumer_key' => $this->options['client_id'],
             'oauth_timestamp' => time(),
-            'oauth_nonce' => $this->generateNonce(),
+            'oauth_nonce' => NonceGenerator::generate(),
             'oauth_version' => '1.0',
             'oauth_signature_method' => $this->options['signature_method'],
             'oauth_token' => $accessToken['oauth_token'],
@@ -53,7 +53,7 @@ class GenericOAuth1ResourceOwner extends AbstractResourceOwner
         $content = $this->doGetUserInformationRequest($url, $parameters);
 
         $response = $this->getUserResponse();
-        $response->setData($content instanceof ResponseInterface ? (string) $content->getBody() : $content);
+        $response->setData($content->getContent());
         $response->setResourceOwner($this);
         $response->setOAuthToken(new OAuthToken($accessToken));
 
@@ -88,7 +88,7 @@ class GenericOAuth1ResourceOwner extends AbstractResourceOwner
         $parameters = array_merge([
             'oauth_consumer_key' => $this->options['client_id'],
             'oauth_timestamp' => time(),
-            'oauth_nonce' => $this->generateNonce(),
+            'oauth_nonce' => NonceGenerator::generate(),
             'oauth_version' => '1.0',
             'oauth_signature_method' => $this->options['signature_method'],
             'oauth_token' => $requestToken['oauth_token'],
@@ -146,7 +146,7 @@ class GenericOAuth1ResourceOwner extends AbstractResourceOwner
         $parameters = array_merge([
             'oauth_consumer_key' => $this->options['client_id'],
             'oauth_timestamp' => $timestamp,
-            'oauth_nonce' => $this->generateNonce(),
+            'oauth_nonce' => NonceGenerator::generate(),
             'oauth_version' => '1.0',
             'oauth_callback' => $redirectUri,
             'oauth_signature_method' => $this->options['signature_method'],
@@ -207,11 +207,11 @@ class GenericOAuth1ResourceOwner extends AbstractResourceOwner
     protected function httpRequest($url, $content = null, array $headers = [], $method = null, array $parameters = [])
     {
         foreach ($parameters as $key => $value) {
-            $parameters[$key] = $key.'="'.rawurlencode($value).'"';
+            $parameters[$key] = $key.'="'.rawurlencode($value ?: '').'"';
         }
 
         if (!$this->options['realm']) {
-            array_unshift($parameters, 'realm="'.rawurlencode($this->options['realm']).'"');
+            array_unshift($parameters, 'realm="'.rawurlencode($this->options['realm'] ?? '').'"');
         }
 
         $headers['Authorization'] = 'OAuth '.implode(', ', $parameters);
