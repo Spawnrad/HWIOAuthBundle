@@ -210,16 +210,28 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
      */
     protected function validateResponseContent($response)
     {
-        if (isset($response['error_description'])) {
-            throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error_description']));
-        }
+        if (isset($response['data'])) {
+            if (isset($response['message']) and $response['message'] === 'error') {
+                if (isset($response['data']['error_code']) and $response['data']['error_code']) {
+                    throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['data']['description']));
+                }
 
-        if (isset($response['error'])) {
-            throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error']['message'] ?? $response['error']));
-        }
+                if (!isset($response['data']['access_token'])) {
+                    throw new AuthenticationException('Not a valid access token.');
+                }
+            }
+        } else {
+            if (isset($response['error_description'])) {
+                throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error_description']));
+            }
 
-        if (!isset($response['access_token'])) {
-            throw new AuthenticationException('Not a valid access token.');
+            if (isset($response['error'])) {
+                throw new AuthenticationException(sprintf('OAuth error: "%s"', $response['error']['message'] ?? $response['error']));
+            }
+
+            if (!isset($response['access_token'])) {
+                throw new AuthenticationException('Not a valid access token.');
+            }            
         }
     }
 
