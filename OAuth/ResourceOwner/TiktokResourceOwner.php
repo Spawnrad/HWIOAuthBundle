@@ -31,7 +31,7 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
     protected array $paths = [
         'identifier' => 'data.user.open_id',
         'name' => 'data.user.display_name',
-        'profilepicture' => 'data.user.avatar_url',   
+        'profilepicture' => 'data.user.avatar_url',
         'followers' => 'data.user.follower_count',
         'bio' => 'data.user.bio_description',
         'link' => 'data.user.profile_deep_link',
@@ -44,12 +44,10 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
      */
     public function getUserInformation(array $accessToken, array $extraParameters = [])
     {
-        $accessToken = $accessToken['data'];
-
         $content = $this->httpRequest(
             $this->normalizeUrl($this->options['infos_url'], $extraParameters),
             null,
-            ['Authorization' => 'Bearer '.$accessToken['access_token']]
+            ['Authorization' => 'Bearer ' . $accessToken['access_token']]
         );
 
         $response = $this->getUserResponse();
@@ -67,7 +65,8 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
 
         $parameters = array_merge([
             'code' => $request->query->get('code'),
-            'grant_type' => 'authorization_code'
+            'grant_type' => 'authorization_code',
+            'redirect_uri' => $redirectUri,
         ], $extraParameters);
 
         $response = $this->doGetTokenRequest($this->options['access_token_url'], $parameters);
@@ -114,7 +113,7 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         ], $extraParameters);
 
         return parent::normalizeUrl($this->options['authorization_url'], $parameters);
-    }    
+    }
 
     /**
      * {@inheritdoc}
@@ -124,10 +123,10 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         parent::configureOptions($resolver);
 
         $resolver->setDefaults([
-            'authorization_url' => 'https://open-api.tiktok.com/platform/oauth/connect/',
-            'access_token_url' => 'https://open-api.tiktok.com/oauth/access_token/',
-            'revoke_token_url' => 'https://open-api.tiktok.com/oauth/revoke/',
-            'refresh_token_url' => 'https://open-api.tiktok.com/oauth/refresh_token/',
+            'authorization_url' => 'https://www.tiktok.com/v2/auth/authorize/',
+            'access_token_url' => 'https://open.tiktokapis.com/v2/oauth/token/',
+            'revoke_token_url' => 'https://open.tiktokapis.com/v2/oauth/revoke/',
+            'refresh_token_url' => 'https://open.tiktokapis.com/v2/oauth/token/',
             'infos_url' => 'https://open.tiktokapis.com/v2/user/info/',
             'use_authorization_to_get_token' => false,
             'use_commas_in_scope' => false,
@@ -141,9 +140,8 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         ]);
 
         $resolver
-            ->setAllowedValues('display', ['page', 'popup', 'touch', null]) 
-            ->setAllowedValues('auth_type', ['rerequest', null]) 
-            ->setAllowedTypes('appsecret_proof', 'bool')
-        ;
+            ->setAllowedValues('display', ['page', 'popup', 'touch', null])
+            ->setAllowedValues('auth_type', ['rerequest', null])
+            ->setAllowedTypes('appsecret_proof', 'bool');
     }
 }
