@@ -51,7 +51,7 @@ class FOSUBRegistrationFormHandler implements RegistrationFormHandlerInterface
      * @param TokenGenerator       $tokenGenerator FOSUB token generator
      * @param int                  $iterations     Amount of attempts that should be made to 'guess' a unique username
      */
-    public function __construct(UserManagerInterface $userManager, MailerInterface $mailer, TokenGenerator $tokenGenerator = null, $iterations = 5)
+    public function __construct(UserManagerInterface $userManager, MailerInterface $mailer, ?TokenGenerator $tokenGenerator = null, $iterations = 5)
     {
         $this->userManager = $userManager;
         $this->mailer = $mailer;
@@ -59,9 +59,6 @@ class FOSUBRegistrationFormHandler implements RegistrationFormHandlerInterface
         $this->iterations = $iterations;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function process(Request $request, Form $form, UserResponseInterface $userInformation)
     {
         $user = $this->userManager->createUser();
@@ -99,9 +96,6 @@ class FOSUBRegistrationFormHandler implements RegistrationFormHandlerInterface
 
     /**
      * Set user information from form.
-     *
-     * @param UserInterface         $user
-     * @param UserResponseInterface $userInformation
      *
      * @return UserInterface
      */

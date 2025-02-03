@@ -13,25 +13,16 @@ namespace HWI\Bundle\OAuthBundle\OAuth\Response;
 
 class LinkedinUserResponse extends PathUserResponse
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getFirstName()
     {
         return $this->getPreferredLocaleValue('firstname');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getLastName()
     {
         return $this->getPreferredLocaleValue('lastname');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getProfilePicture()
     {
         // https://docs.microsoft.com/en-us/linkedin/shared/references/v2/profile/profile-picture
@@ -60,10 +51,6 @@ class LinkedinUserResponse extends PathUserResponse
     /**
      * Helper to extract the preferred locale value from MultiLocaleString
      * https://docs.microsoft.com/en-us/linkedin/shared/references/v2/object-types#multilocalestring.
-     *
-     * @param $path
-     *
-     * @return mixed
      */
     protected function getPreferredLocaleValue($path)
     {

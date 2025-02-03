@@ -20,9 +20,6 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class TwitchResourceOwner extends GenericOAuth2ResourceOwner
 {
-    /**
-     * {@inheritdoc}
-     */
     protected array $paths = [
         'identifier' => '_id',
         'nickname' => 'display_name',
@@ -31,18 +28,12 @@ class TwitchResourceOwner extends GenericOAuth2ResourceOwner
         'profilepicture' => 'logo',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
     protected function doGetUserInformationRequest($url, array $parameters = [])
     {
         // Twitch require to pass the OAuth token as 'oauth_token' instead of 'access_token'
         return parent::doGetUserInformationRequest(str_replace('access_token', 'oauth_token', $url), $parameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);

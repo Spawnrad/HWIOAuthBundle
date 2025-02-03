@@ -20,9 +20,6 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class AzureResourceOwner extends GenericOAuth2ResourceOwner
 {
-    /**
-     * {@inheritdoc}
-     */
     protected array $paths = [
         'identifier' => 'sub',
         'nickname' => 'unique_name',
@@ -31,9 +28,6 @@ class AzureResourceOwner extends GenericOAuth2ResourceOwner
         'profilepicture' => null,
     ];
 
-    /**
-     * {@inheritdoc}
-     */
     public function configure()
     {
         $this->options['access_token_url'] = sprintf($this->options['access_token_url'], $this->options['application']);
@@ -41,8 +35,6 @@ class AzureResourceOwner extends GenericOAuth2ResourceOwner
     }
 
     /**
-     * {@inheritdoc}
-     *
      * @throws \InvalidArgumentException
      */
     public function getUserInformation(array $accessToken, array $extraParameters = [])
@@ -73,9 +65,6 @@ class AzureResourceOwner extends GenericOAuth2ResourceOwner
         return $response;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);

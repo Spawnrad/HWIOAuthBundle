@@ -35,81 +35,51 @@ abstract class AbstractUserResponse implements UserResponseInterface
      */
     protected $oAuthToken;
 
-    /**
-     * {@inheritdoc}
-     */
     public function getEmail()
     {
         return null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getProfilePicture($page_id = null)
     {
         return null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAccessToken()
     {
         return $this->oAuthToken->getAccessToken();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getRefreshToken()
     {
         return $this->oAuthToken->getRefreshToken();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getTokenSecret()
     {
         return $this->oAuthToken->getTokenSecret();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getExpiresIn()
     {
         return $this->oAuthToken->getExpiresIn();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function setOAuthToken(OAuthToken $token)
     {
         $this->oAuthToken = $token;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getOAuthToken()
     {
         return $this->oAuthToken;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getData()
     {
         return $this->data;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function setData($data)
     {
         if (\is_array($data)) {
@@ -128,17 +98,11 @@ abstract class AbstractUserResponse implements UserResponseInterface
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getResourceOwner()
     {
         return $this->resourceOwner;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function setResourceOwner(ResourceOwnerInterface $resourceOwner)
     {
         $this->resourceOwner = $resourceOwner;

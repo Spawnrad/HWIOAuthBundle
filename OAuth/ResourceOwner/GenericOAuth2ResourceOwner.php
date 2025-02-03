@@ -30,9 +30,6 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
 {
     public const TYPE = null; // it must be null
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUserInformation(array $accessToken, array $extraParameters = [])
     {
         if ($this->options['use_bearer_authorization']) {
@@ -62,9 +59,6 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
         if ($this->options['csrf']) {
@@ -82,9 +76,6 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         return $this->normalizeUrl($this->options['authorization_url'], $parameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAccessToken(HttpRequest $request, $redirectUri, array $extraParameters = [])
     {
         OAuthErrorHandler::handleOAuthError($request);
@@ -103,9 +94,6 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         return $response;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function refreshAccessToken($refreshToken, array $extraParameters = [])
     {
         $parameters = array_merge([
@@ -121,9 +109,6 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         return $response;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function revokeToken($token)
     {
         if (!isset($this->options['revoke_token_url'])) {
@@ -140,17 +125,11 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         return 200 === $response->getStatusCode();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function handles(HttpRequest $request)
     {
         return $request->query->has('code');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isCsrfTokenValid($csrfToken)
     {
         // Mark token valid when validation is disabled
@@ -169,17 +148,11 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function shouldRefreshOnExpire()
     {
         return $this->options['refresh_on_expire'] ?? false;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function doGetTokenRequest($url, array $parameters = [])
     {
         $headers = [];
@@ -195,9 +168,6 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         return $this->httpRequest($url, http_build_query($parameters, '', '&'), $headers);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function doGetUserInformationRequest($url, array $parameters = [])
     {
         return $this->httpRequest($url, http_build_query($parameters, '', '&'));
@@ -231,13 +201,10 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
 
             if (!isset($response['access_token'])) {
                 throw new AuthenticationException('Not a valid access token.');
-            }            
+            }
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);
@@ -271,9 +238,6 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         $resolver->setNormalizer('scope', $scopeNormalizer);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function httpRequest($url, $content = null, array $headers = [], $method = null)
     {
         $headers += ['Content-Type' => 'application/x-www-form-urlencoded'];

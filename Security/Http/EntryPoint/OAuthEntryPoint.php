@@ -41,10 +41,7 @@ final class OAuthEntryPoint implements AuthenticationEntryPointInterface
         $this->useForward = $useForward;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function start(Request $request, AuthenticationException $authException = null): Response
+    public function start(Request $request, ?AuthenticationException $authException = null): Response
     {
         if ($this->useForward) {
             $subRequest = $this->httpUtils->createRequest($request, $this->loginPath);

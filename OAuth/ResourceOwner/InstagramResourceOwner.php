@@ -21,9 +21,6 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class InstagramResourceOwner extends GenericOAuth2ResourceOwner
 {
-    /**
-     * {@inheritdoc}
-     */
     protected array $paths = [
         'identifier' => 'id',
         'name' => 'accounts.data.0.name',
@@ -38,9 +35,6 @@ class InstagramResourceOwner extends GenericOAuth2ResourceOwner
         'error' => 'error.message',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUserInformation(array $accessToken, array $extraParameters = [])
     {
         if ($this->options['appsecret_proof']) {
@@ -50,9 +44,6 @@ class InstagramResourceOwner extends GenericOAuth2ResourceOwner
         return parent::getUserInformation($accessToken, $extraParameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
         $extraOptions = [];
@@ -67,9 +58,6 @@ class InstagramResourceOwner extends GenericOAuth2ResourceOwner
         return parent::getAuthorizationUrl($redirectUri, array_merge($extraOptions, $extraParameters));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAccessToken(Request $request, $redirectUri, array $extraParameters = [])
     {
         $parameters = [];
@@ -84,9 +72,6 @@ class InstagramResourceOwner extends GenericOAuth2ResourceOwner
         return parent::getAccessToken($request, $this->normalizeUrl($redirectUri, $parameters), $extraParameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function revokeToken($token)
     {
         $parameters = [
@@ -99,9 +84,6 @@ class InstagramResourceOwner extends GenericOAuth2ResourceOwner
         return 200 === $response->getStatusCode();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function refreshAccessToken($access_token, array $extraParameters = [])
     {
         $parameters = array_merge([
@@ -117,9 +99,6 @@ class InstagramResourceOwner extends GenericOAuth2ResourceOwner
         return $response;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);

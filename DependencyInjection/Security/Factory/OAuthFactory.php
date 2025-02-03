@@ -52,17 +52,11 @@ final class OAuthFactory extends AbstractFactory
         $this->addResourceOwnersConfiguration($node);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getKey(): string
     {
         return 'oauth';
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getPosition(): string
     {
         return 'http';
@@ -78,21 +72,15 @@ final class OAuthFactory extends AbstractFactory
         return $this->firewallNames;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function createAuthenticator(
         ContainerBuilder $container,
         string $firewallName,
         array $config,
-        string $userProviderId
+        string $userProviderId,
     ): string {
         throw new \RuntimeException('Deprecated "OAuthFactory" cannot create new Symfony Authenticator!');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function createAuthProvider(ContainerBuilder $container, $id, $config, $userProviderId): string
     {
         $providerId = 'hwi_oauth.authentication.provider.oauth.'.$id;
@@ -145,9 +133,6 @@ final class OAuthFactory extends AbstractFactory
         return new Reference($serviceId);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function createEntryPoint($container, $id, $config, $defaultEntryPointId): ?string
     {
         $entryPointId = 'hwi_oauth.authentication.entry_point.oauth.'.$id;
@@ -161,9 +146,6 @@ final class OAuthFactory extends AbstractFactory
         return $entryPointId;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function createListener($container, $id, $config, $userProvider): string
     {
         $listenerId = parent::createListener($container, $id, $config, $userProvider);
@@ -191,9 +173,6 @@ final class OAuthFactory extends AbstractFactory
             ->replaceArgument(0, new Reference($providerId));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function getListenerId(): string
     {
         return 'hwi_oauth.authentication.listener.oauth';

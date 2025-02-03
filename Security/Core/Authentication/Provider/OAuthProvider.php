@@ -38,7 +38,7 @@ final class OAuthProvider implements AuthenticationProviderInterface
         OAuthAwareUserProviderInterface $userProvider,
         ResourceOwnerMapInterface $resourceOwnerMap,
         UserCheckerInterface $userChecker,
-        TokenStorageInterface $tokenStorage
+        TokenStorageInterface $tokenStorage,
     ) {
         $this->userProvider = $userProvider;
         $this->resourceOwnerMap = $resourceOwnerMap;
@@ -46,9 +46,6 @@ final class OAuthProvider implements AuthenticationProviderInterface
         $this->tokenStorage = $tokenStorage;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function supports(TokenInterface $token): bool
     {
         if (!$token instanceof OAuthToken) {
@@ -58,9 +55,6 @@ final class OAuthProvider implements AuthenticationProviderInterface
         return $this->resourceOwnerMap->hasResourceOwnerByName($token->getResourceOwnerName());
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function authenticate(TokenInterface $token): ?TokenInterface
     {
         if (!$this->supports($token)) {
@@ -135,7 +129,7 @@ final class OAuthProvider implements AuthenticationProviderInterface
     private function createOAuthToken(
         $data,
         OAuthToken $oldToken,
-        ?UserInterface $user
+        ?UserInterface $user,
     ): OAuthToken {
         $tokenClass = \get_class($oldToken);
         if (null !== $user) {

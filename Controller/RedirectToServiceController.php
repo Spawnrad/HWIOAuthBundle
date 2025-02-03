@@ -13,11 +13,10 @@ namespace HWI\Bundle\OAuthBundle\Controller;
 
 use HWI\Bundle\OAuthBundle\Security\OAuthUtils;
 use HWI\Bundle\OAuthBundle\Util\DomainWhitelist;
-use RuntimeException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @author Alexander <iam.asm89@gmail.com>
@@ -65,18 +64,15 @@ final class RedirectToServiceController
     }
 
     /**
-     * @param Request $request
-     * @param string  $service
+     * @param string $service
      *
      * @throws NotFoundHttpException
-     *
-     * @return RedirectResponse
      */
     public function redirectToServiceAction(Request $request, $service): RedirectResponse
     {
         try {
             $authorizationUrl = $this->oauthUtils->getAuthorizationUrl($request, $service);
-        } catch (RuntimeException $e) {
+        } catch (\RuntimeException $e) {
             throw new NotFoundHttpException($e->getMessage(), $e);
         }
 
@@ -100,7 +96,6 @@ final class RedirectToServiceController
             $sessionKeyFailure = '_security.'.$providerKey.'.failed_target_path';
 
             if (!empty($param) && $targetUrl = $request->get($param)) {
-
                 if (!$this->domainWhitelist->isValidTargetUrl($targetUrl)) {
                     throw new AccessDeniedHttpException('Not allowed to redirect to '.$targetUrl);
                 }

@@ -32,9 +32,6 @@ final class SessionStorage implements RequestDataStorageInterface
         $this->requestStack = $requestStack;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function fetch(ResourceOwnerInterface $resourceOwner, $key, $type = 'token')
     {
         $key = $this->generateKey($resourceOwner, $key, $type);
@@ -50,9 +47,6 @@ final class SessionStorage implements RequestDataStorageInterface
         return $data;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function save(ResourceOwnerInterface $resourceOwner, $value, $type = 'token')
     {
         if ('token' === $type) {

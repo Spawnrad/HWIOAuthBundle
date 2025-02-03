@@ -47,9 +47,6 @@ class OAuthListener extends AbstractAuthenticationListener
         $this->checkPaths = $checkPaths;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function requiresAuthentication(Request $request): bool
     {
         // Check if the route matches one of the check paths

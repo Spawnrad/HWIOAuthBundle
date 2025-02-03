@@ -29,17 +29,11 @@ class SensioConnectUserResponse extends AbstractUserResponse
      */
     protected $data;
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUsername()
     {
         return $this->data->attributes->getNamedItem('id')->value;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getNickname()
     {
         $username = null;
@@ -56,49 +50,31 @@ class SensioConnectUserResponse extends AbstractUserResponse
         return $username ?: $this->getNodeValue('./foaf:name', $this->data);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getFirstName()
     {
         return null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getLastName()
     {
         return null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getRealName()
     {
         return $this->getNodeValue('./foaf:name', $this->data);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getEmail()
     {
         return $this->getNodeValue('./foaf:mbox', $this->data);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getProfilePicture()
     {
         return $this->getNodeValue('./atom:link[@rel="foaf:depiction"]', $this->data, 'link');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function setData($data)
     {
         $dom = new \DOMDocument();
@@ -110,7 +86,7 @@ class SensioConnectUserResponse extends AbstractUserResponse
             throw new AuthenticationException('Could not retrieve valid user info.');
         }
 
-        $this->xpath = new \DOMXpath($dom);
+        $this->xpath = new \DOMXPath($dom);
 
         $nodes = $this->xpath->evaluate('/api/root');
         $user = $this->xpath->query('./foaf:Person', $nodes->item(0));
@@ -122,9 +98,8 @@ class SensioConnectUserResponse extends AbstractUserResponse
     }
 
     /**
-     * @param string      $query
-     * @param \DOMElement $element
-     * @param string      $nodeType
+     * @param string $query
+     * @param string $nodeType
      *
      * @return mixed|null
      */
@@ -152,8 +127,6 @@ class SensioConnectUserResponse extends AbstractUserResponse
 
     /**
      * @param string $value
-     *
-     * @return mixed
      */
     protected function sanitizeValue($value)
     {

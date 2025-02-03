@@ -26,9 +26,6 @@ final class Office365ResourceOwner extends GenericOAuth2ResourceOwner
         'lastname' => 'surname',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAccessToken(Request $request, $redirectUri, array $extraParameters = [])
     {
         $extraParameters = array_merge([
@@ -38,9 +35,6 @@ final class Office365ResourceOwner extends GenericOAuth2ResourceOwner
         return parent::getAccessToken($request, $redirectUri, $extraParameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);

@@ -54,14 +54,11 @@ final class OAuthAuthenticatorFactory extends AbstractFactory implements Authent
         $this->addResourceOwnersConfiguration($node);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function createAuthenticator(
         ContainerBuilder $container,
         string $firewallName,
         array $config,
-        string $userProviderId
+        string $userProviderId,
     ): string {
         $authenticatorId = 'security.authenticator.oauth.'.$firewallName;
 
@@ -117,17 +114,11 @@ final class OAuthAuthenticatorFactory extends AbstractFactory implements Authent
         return 0;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getKey(): string
     {
         return 'oauth';
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getPosition(): string
     {
         return 'http';
@@ -138,9 +129,6 @@ final class OAuthAuthenticatorFactory extends AbstractFactory implements Authent
         return $this->firewallNames;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function createAuthProvider(ContainerBuilder $container, string $id, array $config, string $userProviderId): string
     {
         $providerId = 'hwi_oauth.authentication.provider.oauth.'.$id;
@@ -160,9 +148,6 @@ final class OAuthAuthenticatorFactory extends AbstractFactory implements Authent
         return $providerId;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function createEntryPoint($container, $id, $config, ?string $defaultEntryPointId): ?string
     {
         $entryPointId = 'hwi_oauth.authentication.entry_point.oauth.'.$id;
@@ -192,9 +177,6 @@ final class OAuthAuthenticatorFactory extends AbstractFactory implements Authent
         return $listenerId;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function getListenerId(): string
     {
         return 'hwi_oauth.authentication.listener.oauth';

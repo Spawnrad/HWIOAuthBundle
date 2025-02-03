@@ -28,9 +28,6 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
  */
 final class ResourceOwnerCompilerPass implements CompilerPassInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public function process(ContainerBuilder $container): void
     {
         $this->registerResourceOwnerTypeClassParameters($container);

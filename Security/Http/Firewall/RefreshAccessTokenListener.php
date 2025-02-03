@@ -19,7 +19,7 @@ class RefreshAccessTokenListener extends AbstractRefreshAccessTokenListener
     private OAuthAuthenticator $oAuthAuthenticator;
 
     public function __construct(
-        OAuthAuthenticator $oAuthAuthenticator
+        OAuthAuthenticator $oAuthAuthenticator,
     ) {
         $this->oAuthAuthenticator = $oAuthAuthenticator;
     }

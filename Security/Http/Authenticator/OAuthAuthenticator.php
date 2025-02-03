@@ -63,7 +63,7 @@ final class OAuthAuthenticator implements AuthenticatorInterface, Authentication
         AuthenticationSuccessHandlerInterface $successHandler,
         AuthenticationFailureHandlerInterface $failureHandler,
         HttpKernelInterface $kernel,
-        array $options
+        array $options,
     ) {
         $this->failureHandler = $failureHandler;
         $this->successHandler = $successHandler;
@@ -86,7 +86,7 @@ final class OAuthAuthenticator implements AuthenticatorInterface, Authentication
         return false;
     }
 
-    public function start(Request $request, AuthenticationException $authException = null): Response
+    public function start(Request $request, ?AuthenticationException $authException = null): Response
     {
         if ($this->options['use_forward'] ?? false) {
             $subRequest = $this->httpUtils->createRequest($request, $this->options['login_path']);
@@ -200,8 +200,7 @@ final class OAuthAuthenticator implements AuthenticatorInterface, Authentication
     /**
      * @template T of OAuthToken
      *
-     * @param T              $token
-     * @param ?UserInterface $user
+     * @param T $token
      *
      * @return T
      */

@@ -64,7 +64,7 @@ final class LoginController extends AbstractController
         AuthorizationCheckerInterface $authorizationChecker,
         SessionInterface $session,
         bool $connect,
-        string $grantRule
+        string $grantRule,
     ) {
         $this->authenticationUtils = $authenticationUtils;
         $this->router = $router;
@@ -78,11 +78,7 @@ final class LoginController extends AbstractController
      * Action that handles the login 'form'. If connecting is enabled the
      * user will be redirected to the appropriate login urls or registration forms.
      *
-     * @param Request $request
-     *
      * @throws \LogicException
-     *
-     * @return Response
      */
     public function connectAction(Request $request): Response
     {

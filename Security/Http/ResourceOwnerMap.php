@@ -39,7 +39,7 @@ final class ResourceOwnerMap implements ResourceOwnerMapInterface
         HttpUtils $httpUtils,
         array $possibleResourceOwners,
         array $resourceOwners,
-        ServiceLocator $locator
+        ServiceLocator $locator,
     ) {
         $this->httpUtils = $httpUtils;
         $this->possibleResourceOwners = $possibleResourceOwners;
@@ -47,17 +47,11 @@ final class ResourceOwnerMap implements ResourceOwnerMapInterface
         $this->locator = $locator;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function hasResourceOwnerByName(string $name): bool
     {
         return isset($this->resourceOwners[$name], $this->possibleResourceOwners[$name]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getResourceOwnerByName(string $name): ?ResourceOwnerInterface
     {
         if (!$this->hasResourceOwnerByName($name)) {
@@ -74,9 +68,6 @@ final class ResourceOwnerMap implements ResourceOwnerMapInterface
         return $resourceOwner;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getResourceOwnerByRequest(Request $request): ?array
     {
         foreach ($this->resourceOwners as $name => $checkPath) {
@@ -95,17 +86,11 @@ final class ResourceOwnerMap implements ResourceOwnerMapInterface
         return null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getResourceOwnerCheckPath(string $name): ?string
     {
         return $this->resourceOwners[$name] ?? null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getResourceOwners(): array
     {
         return $this->resourceOwners;

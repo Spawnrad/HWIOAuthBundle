@@ -19,9 +19,6 @@ use Twig\TwigFunction;
  */
 final class OAuthExtension extends AbstractExtension
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getFunctions(): array
     {
         return [

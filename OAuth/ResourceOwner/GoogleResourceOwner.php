@@ -21,17 +21,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class GoogleResourceOwner extends GenericOAuth2ResourceOwner
 {
-    /**
-     * {@inheritdoc}
-     */
     protected array $paths = [
         'identifier' => 'username',
         'accounts' => 'items',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
         $url = parent::getAuthorizationUrl($redirectUri, array_merge([
@@ -49,9 +43,6 @@ class GoogleResourceOwner extends GenericOAuth2ResourceOwner
         return $url;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function revokeToken($token)
     {
         $response = $this->httpRequest($this->normalizeUrl($this->options['revoke_token_url'], ['token' => $token]));
@@ -59,9 +50,6 @@ class GoogleResourceOwner extends GenericOAuth2ResourceOwner
         return 200 === $response->getStatusCode();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);

@@ -20,21 +20,15 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class TwitterResourceOwner extends GenericOAuth1ResourceOwner
 {
-    /**
-     * {@inheritdoc}
-     */
     protected array $paths = [
         'identifier' => 'id_str',
         'name' => 'screen_name',
         'profilepicture' => 'profile_image_url_https',
         'followers' => 'followers_count',
         'statusCode' => 'errors.0.code',
-        'error' => 'error.0.message'
+        'error' => 'error.0.message',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUserInformation(array $accessToken, array $extraParameters = [])
     {
         if ($this->options['include_email']) {
@@ -48,9 +42,7 @@ class TwitterResourceOwner extends GenericOAuth1ResourceOwner
     {
         return;
     }
-    /**
-     * {@inheritdoc}
-     */
+
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);

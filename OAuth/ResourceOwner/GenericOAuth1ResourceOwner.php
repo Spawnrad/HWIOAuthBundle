@@ -26,9 +26,6 @@ abstract class GenericOAuth1ResourceOwner extends AbstractResourceOwner
 {
     public const TYPE = null; // it must be null
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUserInformation(array $accessToken, array $extraParameters = [])
     {
         $parameters = array_merge([
@@ -60,9 +57,6 @@ abstract class GenericOAuth1ResourceOwner extends AbstractResourceOwner
         return $response;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
         $token = $this->getRequestToken($redirectUri, $extraParameters);
@@ -70,9 +64,6 @@ abstract class GenericOAuth1ResourceOwner extends AbstractResourceOwner
         return $this->normalizeUrl($this->options['authorization_url'], ['oauth_token' => $token['oauth_token']]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAccessToken(HttpRequest $request, $redirectUri, array $extraParameters = [])
     {
         OAuthErrorHandler::handleOAuthError($request);
@@ -119,26 +110,17 @@ abstract class GenericOAuth1ResourceOwner extends AbstractResourceOwner
         return $response;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function handles(HttpRequest $request)
     {
         return $request->query->has('oauth_token');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isCsrfTokenValid($csrfToken)
     {
         // OAuth1.0a passes token with every call
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getRequestToken($redirectUri, array $extraParameters = [])
     {
         $timestamp = time();
@@ -185,25 +167,16 @@ abstract class GenericOAuth1ResourceOwner extends AbstractResourceOwner
         return $response;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function doGetTokenRequest($url, array $parameters = [])
     {
         return $this->httpRequest($url, null, [], 'POST', $parameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function doGetUserInformationRequest($url, array $parameters = [])
     {
         return $this->httpRequest($url, null, [], null, $parameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function httpRequest($url, $content = null, array $headers = [], $method = null, array $parameters = [])
     {
         foreach ($parameters as $key => $value) {
@@ -219,9 +192,6 @@ abstract class GenericOAuth1ResourceOwner extends AbstractResourceOwner
         return parent::httpRequest($url, $content, $headers, $method);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);

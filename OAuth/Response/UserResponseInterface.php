@@ -67,7 +67,7 @@ interface UserResponseInterface extends ResponseInterface
      */
     public function getProfilePicture($page_id = null);
 
-    public function getPageId($page_level );
+    public function getPageId($page_level);
 
     /**
      * Get bio.
@@ -77,14 +77,14 @@ interface UserResponseInterface extends ResponseInterface
     public function getBio();
 
     /**
-     * Get Accounts
+     * Get Accounts.
      *
      * @return array|null
      */
     public function getAccounts();
 
     /**
-     * Get Followers count
+     * Get Followers count.
      *
      * @return string|null
      */
@@ -120,8 +120,6 @@ interface UserResponseInterface extends ResponseInterface
 
     /**
      * Set the raw token data from the request.
-     *
-     * @param OAuthToken $token
      */
     public function setOAuthToken(OAuthToken $token);
 

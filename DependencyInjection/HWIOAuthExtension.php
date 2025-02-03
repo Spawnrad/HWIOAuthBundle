@@ -36,11 +36,9 @@ use Symfony\Component\DependencyInjection\Exception\BadMethodCallException;
 use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException;
 use Symfony\Component\DependencyInjection\Exception\OutOfBoundsException;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
-use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
-use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
-
 
 /**
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
@@ -67,8 +65,6 @@ final class HWIOAuthExtension extends Extension
     }
 
     /**
-     * {@inheritdoc}
-     *
      * @throws \Exception
      * @throws \RuntimeException
      * @throws InvalidConfigurationException
@@ -173,9 +169,6 @@ final class HWIOAuthExtension extends Extension
         return new Reference('hwi_oauth.resource_owner.'.$name);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAlias(): string
     {
         return 'hwi_oauth';

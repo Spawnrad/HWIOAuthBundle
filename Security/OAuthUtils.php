@@ -46,7 +46,7 @@ final class OAuthUtils
         AuthorizationCheckerInterface $authorizationChecker,
         FirewallMap $firewallMap,
         bool $connect,
-        string $grantRule
+        string $grantRule,
     ) {
         $this->httpUtils = $httpUtils;
         $this->authorizationChecker = $authorizationChecker;
@@ -139,7 +139,7 @@ final class OAuthUtils
         array $parameters,
         string $clientSecret,
         string $tokenSecret = '',
-        string $signatureMethod = self::SIGNATURE_METHOD_HMAC
+        string $signatureMethod = self::SIGNATURE_METHOD_HMAC,
     ): string {
         // Validate required parameters
         foreach (['oauth_consumer_key', 'oauth_timestamp', 'oauth_nonce', 'oauth_version', 'oauth_signature_method'] as $parameter) {
@@ -232,7 +232,6 @@ final class OAuthUtils
         foreach ($this->ownerMaps as $ownerMap) {
             $resourceOwner = $ownerMap->getResourceOwnerByName($name);
             if ($resourceOwner instanceof ResourceOwnerInterface) {
-
                 return $resourceOwner;
             }
         }

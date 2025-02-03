@@ -62,7 +62,7 @@ final class ConnectController extends AbstractController
         bool $failedUseReferer,
         string $failedAuthPath,
         bool $enableConnectConfirmation,
-        ?AccountConnectorInterface $accountConnector
+        ?AccountConnectorInterface $accountConnector,
     ) {
         parent::__construct(
             $resourceOwnerMapLocator,

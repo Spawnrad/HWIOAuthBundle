@@ -57,7 +57,7 @@ final class RegisterController extends AbstractController
         string $grantRule,
         string $registrationForm,
         ?AccountConnectorInterface $accountConnector,
-        ?RegistrationFormHandlerInterface $formHandler
+        ?RegistrationFormHandlerInterface $formHandler,
     ) {
         parent::__construct(
             $resourceOwnerMapLocator,

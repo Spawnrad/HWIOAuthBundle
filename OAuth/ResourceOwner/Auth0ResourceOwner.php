@@ -21,9 +21,6 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class Auth0ResourceOwner extends GenericOAuth2ResourceOwner
 {
-    /**
-     * {@inheritdoc}
-     */
     protected array $paths = [
         'identifier' => 'user_id',
         'nickname' => 'nickname',
@@ -32,9 +29,6 @@ class Auth0ResourceOwner extends GenericOAuth2ResourceOwner
         'profilepicture' => 'picture',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
     protected function doGetTokenRequest($url, array $parameters = [])
     {
         $parameters['client_id'] = $this->options['client_id'];
@@ -48,9 +42,6 @@ class Auth0ResourceOwner extends GenericOAuth2ResourceOwner
         );
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function doGetUserInformationRequest($url, array $parameters = [])
     {
         return $this->httpRequest(
@@ -60,9 +51,6 @@ class Auth0ResourceOwner extends GenericOAuth2ResourceOwner
         );
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);
@@ -97,8 +85,6 @@ class Auth0ResourceOwner extends GenericOAuth2ResourceOwner
     }
 
     /**
-     * @param array $headers
-     *
      * @return array
      */
     private function getRequestHeaders(array $headers = [])

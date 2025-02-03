@@ -20,9 +20,6 @@ if (class_exists(UserNotFoundException::class)) {
     {
         private ?string $resourceOwnerName = null;
 
-        /**
-         * {@inheritdoc}
-         */
         public function __serialize(): array
         {
             return [
@@ -31,30 +28,21 @@ if (class_exists(UserNotFoundException::class)) {
             ];
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function __unserialize(array $data): void
         {
             [
                 $this->resourceOwnerName,
-                $parentData
+                $parentData,
             ] = $data;
 
             parent::__unserialize($parentData);
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getMessageKey(): string
         {
             return 'Account could not be linked correctly.';
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getAccessToken(): string
         {
             /** @var AbstractOAuthToken $token */
@@ -71,9 +59,6 @@ if (class_exists(UserNotFoundException::class)) {
             return $token->getRawToken();
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getRefreshToken(): ?string
         {
             /** @var AbstractOAuthToken $token */
@@ -82,9 +67,6 @@ if (class_exists(UserNotFoundException::class)) {
             return $token->getRefreshToken();
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getExpiresIn(): ?int
         {
             /** @var AbstractOAuthToken $token */
@@ -93,9 +75,6 @@ if (class_exists(UserNotFoundException::class)) {
             return $token->getExpiresIn();
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getTokenSecret(): ?string
         {
             /** @var AbstractOAuthToken $token */
@@ -104,17 +83,11 @@ if (class_exists(UserNotFoundException::class)) {
             return $token->getTokenSecret();
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getResourceOwnerName(): ?string
         {
             return $this->resourceOwnerName;
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function setResourceOwnerName($resourceOwnerName): void
         {
             $this->resourceOwnerName = $resourceOwnerName;
@@ -125,9 +98,6 @@ if (class_exists(UserNotFoundException::class)) {
     {
         private ?string $resourceOwnerName = null;
 
-        /**
-         * {@inheritdoc}
-         */
         public function __serialize(): array
         {
             return [
@@ -136,30 +106,21 @@ if (class_exists(UserNotFoundException::class)) {
             ];
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function __unserialize(array $data): void
         {
             [
                 $this->resourceOwnerName,
-                $parentData
+                $parentData,
             ] = $data;
 
             parent::__unserialize($parentData);
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getMessageKey(): string
         {
             return 'Account could not be linked correctly.';
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getAccessToken(): string
         {
             /** @var AbstractOAuthToken $token */
@@ -176,9 +137,6 @@ if (class_exists(UserNotFoundException::class)) {
             return $token->getRawToken();
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getRefreshToken(): ?string
         {
             /** @var AbstractOAuthToken $token */
@@ -187,9 +145,6 @@ if (class_exists(UserNotFoundException::class)) {
             return $token->getRefreshToken();
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getExpiresIn(): ?int
         {
             /** @var AbstractOAuthToken $token */
@@ -198,9 +153,6 @@ if (class_exists(UserNotFoundException::class)) {
             return $token->getExpiresIn();
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getTokenSecret(): ?string
         {
             /** @var AbstractOAuthToken $token */
@@ -209,17 +161,11 @@ if (class_exists(UserNotFoundException::class)) {
             return $token->getTokenSecret();
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function getResourceOwnerName(): ?string
         {
             return $this->resourceOwnerName;
         }
 
-        /**
-         * {@inheritdoc}
-         */
         public function setResourceOwnerName($resourceOwnerName): void
         {
             $this->resourceOwnerName = $resourceOwnerName;

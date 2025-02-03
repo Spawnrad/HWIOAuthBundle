@@ -63,17 +63,11 @@ class FOSUBUserProvider implements UserProviderInterface, AccountConnectorInterf
         $this->accessor = PropertyAccess::createPropertyAccessor();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function loadUserByUsername($username)
     {
         return $this->userManager->findUserByUsername($username);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function loadUserByOAuthUserResponse(UserResponseInterface $response)
     {
         $username = $response->getUsername();
@@ -86,9 +80,6 @@ class FOSUBUserProvider implements UserProviderInterface, AccountConnectorInterf
         return $user;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function connect(UserInterface $user, UserResponseInterface $response)
     {
         if (!$user instanceof User) {
@@ -113,9 +104,6 @@ class FOSUBUserProvider implements UserProviderInterface, AccountConnectorInterf
 
     /**
      * Disconnects a user.
-     *
-     * @param UserInterface         $user
-     * @param UserResponseInterface $response
      */
     public function disconnect(UserInterface $user, UserResponseInterface $response)
     {
@@ -125,9 +113,6 @@ class FOSUBUserProvider implements UserProviderInterface, AccountConnectorInterf
         $this->userManager->updateUser($user);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function refreshUser(UserInterface $user)
     {
         $identifier = $this->properties['identifier'];
@@ -148,9 +133,6 @@ class FOSUBUserProvider implements UserProviderInterface, AccountConnectorInterf
         return $user;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function supportsClass($class)
     {
         $userClass = $this->userManager->getClass();
@@ -160,8 +142,6 @@ class FOSUBUserProvider implements UserProviderInterface, AccountConnectorInterf
 
     /**
      * Gets the property for the response.
-     *
-     * @param UserResponseInterface $response
      *
      * @return string
      *

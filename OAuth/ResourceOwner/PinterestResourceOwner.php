@@ -11,30 +11,22 @@
 
 namespace HWI\Bundle\OAuthBundle\OAuth\ResourceOwner;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- *
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  */
 class PinterestResourceOwner extends GenericOAuth2ResourceOwner
 {
-    /**
-     * {@inheritdoc}
-     */
     protected array $paths = [
         'identifier' => 'id',
         'name' => 'username',
-        'profilepicture' => 'profile_image',        
+        'profilepicture' => 'profile_image',
         'link' => '',
         'statusCode' => 'error.code',
         'error' => 'error.message',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUserInformation(array $accessToken, array $extraParameters = [])
     {
         if ($this->options['appsecret_proof']) {
@@ -44,9 +36,6 @@ class PinterestResourceOwner extends GenericOAuth2ResourceOwner
         return parent::getUserInformation($accessToken, $extraParameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
         $extraOptions = [];
@@ -61,9 +50,6 @@ class PinterestResourceOwner extends GenericOAuth2ResourceOwner
         return parent::getAuthorizationUrl($redirectUri, array_merge($extraOptions, $extraParameters));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);
@@ -80,8 +66,8 @@ class PinterestResourceOwner extends GenericOAuth2ResourceOwner
         ]);
 
         $resolver
-            ->setAllowedValues('display', ['page', 'popup', 'touch', null]) 
-            ->setAllowedValues('auth_type', ['rerequest', null]) 
+            ->setAllowedValues('display', ['page', 'popup', 'touch', null])
+            ->setAllowedValues('auth_type', ['rerequest', null])
             ->setAllowedTypes('appsecret_proof', 'bool')
         ;
     }

@@ -28,9 +28,6 @@ use Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProvid
  */
 class HWIOAuthBundle extends Bundle
 {
-    /**
-     * {@inheritdoc}
-     */
     public function build(ContainerBuilder $container)
     {
         parent::build($container);
@@ -55,9 +52,6 @@ class HWIOAuthBundle extends Bundle
         $container->addCompilerPass(new EnableRefreshOAuthTokenListenerCompilerPass());
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getContainerExtension(): ?ExtensionInterface
     {
         // return the right extension instead of "auto-registering" it. Now the

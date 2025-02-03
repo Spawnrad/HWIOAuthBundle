@@ -57,7 +57,7 @@ abstract class AbstractController
         TokenStorageInterface $tokenStorage,
         UserCheckerInterface $userChecker,
         Environment $twig,
-        ?AccountConnectorInterface $accountConnector
+        ?AccountConnectorInterface $accountConnector,
     ) {
         $this->resourceOwnerMapLocator = $resourceOwnerMapLocator;
         $this->requestStack = $requestStack;
@@ -168,7 +168,7 @@ abstract class AbstractController
     /**
      * @param Event|DeprecatedEvent $event
      */
-    protected function dispatch($event, string $eventName = null): void
+    protected function dispatch($event, ?string $eventName = null): void
     {
         $this->dispatcher->dispatch($event, $eventName);
     }

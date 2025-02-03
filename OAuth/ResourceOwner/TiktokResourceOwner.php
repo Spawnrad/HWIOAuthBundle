@@ -11,23 +11,18 @@
 
 namespace HWI\Bundle\OAuthBundle\OAuth\ResourceOwner;
 
-use HWI\Bundle\OAuthBundle\Security\OAuthErrorHandler;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use HWI\Bundle\OAuthBundle\Security\Helper\NonceGenerator;
-use Symfony\Component\HttpFoundation\Request as HttpRequest;
 use HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken;
-
+use HWI\Bundle\OAuthBundle\Security\OAuthErrorHandler;
+use Symfony\Component\HttpFoundation\Request as HttpRequest;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- *
  * TiktokResourceOwner.
+ *
  * @author Geoffrey Bachelet <geoffrey.bachelet@gmail.com>
  */
 class TiktokResourceOwner extends GenericOAuth2ResourceOwner
 {
-    /**
-     * {@inheritdoc}
-     */
     protected array $paths = [
         'identifier' => 'data.user.open_id',
         'name' => 'data.user.display_name',
@@ -39,15 +34,12 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         'error' => 'error.message',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUserInformation(array $accessToken, array $extraParameters = [])
     {
         $content = $this->httpRequest(
             $this->normalizeUrl($this->options['infos_url'], $extraParameters),
             null,
-            ['Authorization' => 'Bearer ' . $accessToken['access_token']]
+            ['Authorization' => 'Bearer '.$accessToken['access_token']]
         );
 
         $response = $this->getUserResponse();
@@ -57,7 +49,6 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
 
         return $response;
     }
-
 
     public function getAccessToken(HttpRequest $request, $redirectUri, array $extraParameters = [])
     {
@@ -77,9 +68,6 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         return $response;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function refreshAccessToken($refreshToken, array $extraParameters = [])
     {
         $parameters = array_merge([
@@ -95,9 +83,6 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         return $response;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
         if ($this->options['csrf']) {
@@ -115,9 +100,6 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
         return parent::normalizeUrl($this->options['authorization_url'], $parameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);
@@ -136,7 +118,7 @@ class TiktokResourceOwner extends GenericOAuth2ResourceOwner
             'appsecret_proof' => false,
             'client_attr_name' => 'client_key',
             'use_bearer_authorization' => false,
-            'fields' => ["open_id", "union_id", "avatar_url", "display_name"]
+            'fields' => ['open_id', 'union_id', 'avatar_url', 'display_name'],
         ]);
 
         $resolver

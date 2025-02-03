@@ -20,9 +20,6 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class YoutubeResourceOwner extends GenericOAuth2ResourceOwner
 {
-    /**
-     * {@inheritdoc}
-     */
     protected array $paths = [
         'identifier' => 'items.0.id',
         'name' => 'items.0.snippet.title',
@@ -30,12 +27,9 @@ class YoutubeResourceOwner extends GenericOAuth2ResourceOwner
         'followers' => 'items.0.statistics.subscriberCount',
         'uploadId' => 'items.0.contentDetails.relatedPlaylists.uploads',
         'statusCode' => 'error.code',
-        'error' => 'error.message'
+        'error' => 'error.message',
     ];
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
     {
         return parent::getAuthorizationUrl($redirectUri, array_merge([
@@ -47,18 +41,13 @@ class YoutubeResourceOwner extends GenericOAuth2ResourceOwner
         ], $extraParameters));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function revokeToken($token)
     {
-        $response = $this->httpRequest($this->normalizeUrl($this->options['revoke_token_url'], array('token' => $token)), null, array(), 'POST');
+        $response = $this->httpRequest($this->normalizeUrl($this->options['revoke_token_url'], ['token' => $token]), null, [], 'POST');
 
         return 200 === $response->getStatusCode();
     }
-    /**
-     * {@inheritdoc}
-     */
+
     protected function configureOptions(OptionsResolver $resolver)
     {
         parent::configureOptions($resolver);
