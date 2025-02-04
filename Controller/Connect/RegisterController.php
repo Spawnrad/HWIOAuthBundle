@@ -86,7 +86,7 @@ final class RegisterController extends AbstractController
      * @throws AccessDeniedException if any user is authenticated
      * @throws \RuntimeException
      */
-    public function registrationAction(Request $request, string $key): Response
+    public function registration(Request $request, string $key): Response
     {
         if (!$this->accountConnector || !$this->formHandler) {
             throw new NotFoundHttpException();
@@ -103,8 +103,8 @@ final class RegisterController extends AbstractController
             if (!$session->isStarted()) {
                 $session->start();
             }
-            $error = $session->get('_hwi_oauth.registration_error.'.$key);
-            $session->remove('_hwi_oauth.registration_error.'.$key);
+            $error = $session->get('_hwi_oauth.registration_error.' . $key);
+            $session->remove('_hwi_oauth.registration_error.' . $key);
         }
 
         if (!$error instanceof AccountNotLinkedException) {
@@ -113,8 +113,7 @@ final class RegisterController extends AbstractController
 
         $userInformation = $this
             ->getResourceOwnerByName($error->getResourceOwnerName())
-            ->getUserInformation($error->getRawToken())
-        ;
+            ->getUserInformation($error->getRawToken());
 
         $form = $this->formFactory->create($this->registrationForm);
 
@@ -145,7 +144,7 @@ final class RegisterController extends AbstractController
 
         if ($session) {
             // reset the error in the session
-            $session->set('_hwi_oauth.registration_error.'.$key, $error);
+            $session->set('_hwi_oauth.registration_error.' . $key, $error);
         }
 
         $event = new GetResponseUserEvent($form->getData(), $request);

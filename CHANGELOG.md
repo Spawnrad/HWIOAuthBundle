@@ -18,7 +18,7 @@ Changelog
 * Fixed: Symfony deprecation warning in `symfony/config`,
 * Fixed: SensioConnect now uses new API URLs,
 * Fixed: Do not add Authorization header if no client_secret is present,
-* Fixed: `LoginController::connectAction` should not fail if no token is available,
+* Fixed: `LoginController::connect` should not fail if no token is available,
 * Added: Genius.com resource owner,
 * Added: HTTPlug 2.0 support,
 * Added: Keycloak resource owner,

@@ -80,7 +80,7 @@ final class LoginController extends AbstractController
      *
      * @throws \LogicException
      */
-    public function connectAction(Request $request): Response
+    public function connect(Request $request): Response
     {
         try {
             $hasUser = $this->authorizationChecker->isGranted($this->grantRule);
@@ -99,7 +99,7 @@ final class LoginController extends AbstractController
                     $session->start();
                 }
 
-                $session->set('_hwi_oauth.registration_error.'.$key, $error);
+                $session->set('_hwi_oauth.registration_error.' . $key, $error);
             }
 
             return new RedirectResponse($this->router->generate('hwi_oauth_connect_registration', ['key' => $key], UrlGeneratorInterface::ABSOLUTE_PATH));

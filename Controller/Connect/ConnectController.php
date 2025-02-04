@@ -93,7 +93,7 @@ final class ConnectController extends AbstractController
      * @throws NotFoundHttpException if `connect` functionality was not enabled
      * @throws AccessDeniedException if no user is authenticated
      */
-    public function connectServiceAction(Request $request, string $service): Response
+    public function connectService(Request $request, string $service): Response
     {
         if (!$this->accountConnector) {
             throw new NotFoundHttpException();
@@ -123,10 +123,10 @@ final class ConnectController extends AbstractController
 
             if ($session) {
                 // save in session
-                $session->set('_hwi_oauth.connect_confirmation.'.$key, $accessToken);
+                $session->set('_hwi_oauth.connect_confirmation.' . $key, $accessToken);
             }
         } elseif ($session) {
-            $accessToken = $session->get('_hwi_oauth.connect_confirmation.'.$key);
+            $accessToken = $session->get('_hwi_oauth.connect_confirmation.' . $key);
         }
 
         // Redirect to the login path if the token is empty (Eg. User cancelled auth)

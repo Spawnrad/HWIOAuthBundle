@@ -68,7 +68,7 @@ final class RedirectToServiceController
      *
      * @throws NotFoundHttpException
      */
-    public function redirectToServiceAction(Request $request, $service): RedirectResponse
+    public function redirectToService(Request $request, $service): RedirectResponse
     {
         try {
             $authorizationUrl = $this->oauthUtils->getAuthorizationUrl($request, $service);
@@ -92,12 +92,12 @@ final class RedirectToServiceController
         $param = $this->targetPathParameter;
 
         foreach ($this->firewallNames as $providerKey) {
-            $sessionKey = '_security.'.$providerKey.'.target_path';
-            $sessionKeyFailure = '_security.'.$providerKey.'.failed_target_path';
+            $sessionKey = '_security.' . $providerKey . '.target_path';
+            $sessionKeyFailure = '_security.' . $providerKey . '.failed_target_path';
 
             if (!empty($param) && $targetUrl = $request->get($param)) {
                 if (!$this->domainWhitelist->isValidTargetUrl($targetUrl)) {
-                    throw new AccessDeniedHttpException('Not allowed to redirect to '.$targetUrl);
+                    throw new AccessDeniedHttpException('Not allowed to redirect to ' . $targetUrl);
                 }
 
                 $session->set($sessionKey, $targetUrl);
