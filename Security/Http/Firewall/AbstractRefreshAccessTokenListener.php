@@ -41,7 +41,7 @@ abstract class AbstractRefreshAccessTokenListener extends AbstractListener
         return null;
     }
 
-    public function authenticate(RequestEvent $event)
+    public function authenticate(RequestEvent $event): void
     {
         if (null === $token = $this->tokenStorage->getToken()) {
             return;
