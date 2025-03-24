@@ -99,7 +99,7 @@ final class EntityUserProvider implements UserProviderInterface, OAuthAwareUserP
         return $user;
     }
 
-    public function refreshUser(UserInterface $user): ?UserInterface
+    public function refreshUser(UserInterface $user): UserInterface
     {
         $accessor = PropertyAccess::createPropertyAccessor();
         $identifier = $this->properties['identifier'];
