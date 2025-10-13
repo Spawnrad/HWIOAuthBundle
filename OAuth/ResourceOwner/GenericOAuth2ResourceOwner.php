@@ -36,7 +36,7 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
             $content = $this->httpRequest(
                 $this->normalizeUrl($this->options['infos_url'], $extraParameters),
                 null,
-                ['Authorization' => 'Bearer '.$accessToken['access_token']]
+                ['Authorization' => 'Bearer ' . $accessToken['access_token']]
             );
         } else {
             $content = $this->doGetUserInformationRequest(
@@ -54,7 +54,34 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
             $response->setOAuthToken(new OAuthToken($accessToken));
 
             return $response;
-        } catch (TransportExceptionInterface|JsonException $e) {
+        } catch (TransportExceptionInterface | JsonException $e) {
+            throw new HttpTransportException('Error while sending HTTP request', $this->getName(), $e->getCode(), $e);
+        }
+    }
+
+
+    public function getInformation(array $extraParameters = [])
+    {
+        $headers = [];
+
+        if (isset($extraParameters['channelId'])) {
+            $url = $this->options['infos_url'] . '&id=' . $extraParameters['channelId'];
+            $url = str_replace('&mine=true', '', $url);
+            unset($extraParameters['channelId']);
+        } else {
+            $url = $this->options['infos_url'];
+        }
+
+
+        $content = $this->httpRequest($this->normalizeUrl($url, array_merge($headers, $extraParameters)));
+
+        try {
+            $response = $this->getUserResponse();
+            $response->setData($content->toArray(false));
+            $response->setResourceOwner($this);
+
+            return $response;
+        } catch (TransportExceptionInterface | JsonException $e) {
             throw new HttpTransportException('Error while sending HTTP request', $this->getName(), $e->getCode(), $e);
         }
     }
@@ -158,7 +185,7 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
         $headers = [];
         if ($this->options['use_authorization_to_get_token']) {
             if ($this->options['client_secret']) {
-                $headers['Authorization'] = 'Basic '.base64_encode($this->options['client_id'].':'.$this->options['client_secret']);
+                $headers['Authorization'] = 'Basic ' . base64_encode($this->options['client_id'] . ':' . $this->options['client_secret']);
             }
         } else {
             $parameters[$this->options['client_attr_name']] = $this->options['client_id'];
