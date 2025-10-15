@@ -64,7 +64,7 @@ abstract class GenericOAuth2ResourceOwner extends AbstractResourceOwner
     {
         $headers = [];
 
-        if (isset($extraParameters['id'])) {
+        if (!empty($extraParameters)) {
             $url = str_replace('&mine=true', '', $this->options['infos_url']);
         } else {
             $url = $this->options['infos_url'];
